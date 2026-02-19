@@ -1,5 +1,5 @@
 site:
-  name: AstroWind
+  name: "Ruby Jha"
   site: 'https://astrowind.vercel.app'
   base: '/'
   trailingSlash: false
@@ -23,8 +23,8 @@ metadata:
         height: 628
     type: website
   twitter:
-    handle: '@arthelokyo'
-    site: '@arthelokyo'
+    handle: '@rubyjha'
+    site: '@rubyjha'
     cardType: summary_large_image
 
 i18n:
