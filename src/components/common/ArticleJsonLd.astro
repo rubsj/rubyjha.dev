@@ -1,0 +1,29 @@
+---
+import type { Project } from '~/types';
+
+export interface Props {
+  project: Project;
+  url: string | URL;
+}
+
+const { project, url } = Astro.props;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: project.title,
+  description: project.description,
+  datePublished: project.publishDate.toISOString(),
+  author: {
+    '@type': 'Person',
+    name: 'Ruby Jha',
+    url: 'https://rubyjha.dev/about',
+  },
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': String(url),
+  },
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

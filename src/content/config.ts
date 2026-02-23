@@ -57,9 +57,12 @@ const postCollection = defineCollection({
     excerpt: z.string().optional(),
     image: z.string().optional(),
 
-    category: z.string().optional(),
+    category: z.enum(['tutorials', 'architecture-decisions', 'project-deep-dives', 'industry-insights']).optional(),
     tags: z.array(z.string()).optional(),
     author: z.string().optional(),
+
+    series: z.string().optional(),
+    seriesOrder: z.number().optional(),
 
     metadata: metadataDefinition(),
   }),

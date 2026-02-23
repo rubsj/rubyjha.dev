@@ -20,7 +20,7 @@ metadata:
     images:
       - url: '~/assets/images/default.png'
         width: 1200
-        height: 628
+        height: 630
     type: website
   twitter:
     handle: '@rubyjha'
@@ -34,11 +34,11 @@ i18n:
 apps:
   blog:
     isEnabled: true
-    postsPerPage: 6
+    postsPerPage: 10
 
     post:
       isEnabled: true
-      permalink: '/%slug%' # Variables: %slug%, %year%, %month%, %day%, %hour%, %minute%, %second%, %category%
+      permalink: '/blog/%slug%' # Variables: %slug%, %year%, %month%, %day%, %hour%, %minute%, %second%, %category%
       robots:
         index: true
 

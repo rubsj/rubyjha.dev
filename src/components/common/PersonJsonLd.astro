@@ -1,0 +1,26 @@
+---
+export interface Props {
+  name?: string;
+  url?: string;
+  jobTitle?: string;
+  sameAs?: string[];
+}
+
+const {
+  name = 'Ruby Jha',
+  url = 'https://rubyjha.dev',
+  jobTitle = 'Engineering Manager',
+  sameAs = ['https://linkedin.com/in/jharuby', 'https://github.com/rubsj'],
+} = Astro.props;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name,
+  url,
+  jobTitle,
+  sameAs,
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

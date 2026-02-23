@@ -3,6 +3,7 @@ export const prerender = true;
 
 import Layout from '~/layouts/PageLayout.astro';
 import SingleProject from '~/components/projects/SingleProject.astro';
+import ArticleJsonLd from '~/components/common/ArticleJsonLd.astro';
 import { fetchProjects } from '~/utils/projects';
 import type { Project } from '~/types';
 
@@ -30,4 +31,5 @@ const metadata = {
   <SingleProject project={project} url={Astro.url}>
     {project.Content ? <project.Content /> : <Fragment set:html={''} />}
   </SingleProject>
+  <ArticleJsonLd project={project} url={Astro.url} />
 </Layout>
