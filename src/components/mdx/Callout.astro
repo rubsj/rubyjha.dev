@@ -1,0 +1,49 @@
+---
+import { Icon } from 'astro-icon/components';
+
+export interface Props {
+  type: 'info' | 'warning' | 'tip' | 'danger';
+}
+
+const { type } = Astro.props;
+
+const config = {
+  info: {
+    icon: 'tabler:info-circle',
+    border: 'border-blue-400 dark:border-blue-500',
+    bg: 'bg-blue-50 dark:bg-blue-950/30',
+    iconColor: 'text-blue-500 dark:text-blue-400',
+    text: 'text-blue-900 dark:text-blue-100',
+  },
+  warning: {
+    icon: 'tabler:alert-triangle',
+    border: 'border-amber-400 dark:border-amber-500',
+    bg: 'bg-amber-50 dark:bg-amber-950/30',
+    iconColor: 'text-amber-500 dark:text-amber-400',
+    text: 'text-amber-900 dark:text-amber-100',
+  },
+  tip: {
+    icon: 'tabler:bulb',
+    border: 'border-green-400 dark:border-green-500',
+    bg: 'bg-green-50 dark:bg-green-950/30',
+    iconColor: 'text-green-500 dark:text-green-400',
+    text: 'text-green-900 dark:text-green-100',
+  },
+  danger: {
+    icon: 'tabler:alert-circle',
+    border: 'border-red-400 dark:border-red-500',
+    bg: 'bg-red-50 dark:bg-red-950/30',
+    iconColor: 'text-red-500 dark:text-red-400',
+    text: 'text-red-900 dark:text-red-100',
+  },
+};
+
+const { icon, border, bg, iconColor, text } = config[type];
+---
+
+<div class={`my-6 flex gap-3 rounded-r-lg border-l-4 p-4 ${border} ${bg}`}>
+  <Icon name={icon} class={`mt-0.5 h-5 w-5 shrink-0 ${iconColor}`} />
+  <div class={`prose-sm ${text} [&>p]:my-0 [&>p:first-child]:mt-0`}>
+    <slot />
+  </div>
+</div>

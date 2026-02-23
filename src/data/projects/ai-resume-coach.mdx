@@ -1,0 +1,15 @@
+---
+title: "AI Resume Coach"
+description: "AI-powered resume analysis and coaching system with structured feedback using RAG over job descriptions."
+projectNumber: 4
+status: "planned"
+tags: ["rag", "prompt-engineering"]
+techStack: ["Python", "OpenAI", "LangChain", "Streamlit"]
+demoType: "none"
+featured: false
+publishDate: 2026-02-22
+---
+
+The AI Resume Coach will analyze a candidate's resume against a target job description using RAG over a curated corpus of job postings and hiring rubrics. Rather than generic feedback, the system extracts structured signals: keyword gaps, missing accomplishment metrics, and role-specific language alignment. The output is a prioritized coaching report with specific revision suggestions, not a vague "improve your summary" prompt.
+
+The system is built on a retrieval-augmented architecture — job descriptions are chunked and embedded, then retrieved at coaching time to ground feedback in the actual requirements of the target role. This eliminates the hallucination problem common in generic resume LLMs and produces feedback that's specific enough to act on.

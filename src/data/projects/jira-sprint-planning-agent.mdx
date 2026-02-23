@@ -1,0 +1,15 @@
+---
+title: "Jira Sprint Planning Agent"
+description: "Multi-agent system for automated sprint planning — agents analyze backlog, estimate effort, identify dependencies, and propose sprint composition."
+projectNumber: 7
+status: "planned"
+tags: ["multi-agent", "crewai", "engineering-management"]
+techStack: ["Python", "CrewAI", "OpenAI", "Jira API"]
+demoType: "none"
+featured: false
+publishDate: 2026-02-22
+---
+
+Sprint planning is a high-context, high-friction process that consumes several hours of engineering leadership time every two weeks. This project automates the analytical heavy lifting: a CrewAI multi-agent system that ingests the Jira backlog, estimates relative effort using historical velocity data, identifies blocking dependencies through issue link analysis, and proposes a sprint composition that respects team capacity constraints.
+
+The output isn't a mandate — it's a structured recommendation that the engineering manager reviews and adjusts. The goal is to reduce the prep time from hours to minutes by automating the mechanical parts (backlog triage, dependency mapping, capacity math) so the human conversation can focus on judgment calls and context that the system can't see.

@@ -1,0 +1,92 @@
+---
+title: "Contrastive Embedding Fine-Tuning"
+description: "Comparing standard vs LoRA fine-tuning for sentence transformers. LoRA achieved 96.9% of standard performance with 0.32% trainable parameters — 309x smaller model, 43% faster training."
+projectNumber: 3
+status: "completed"
+tags: ["fine-tuning", "embeddings", "lora", "llm-evaluation"]
+techStack: ["Python", "Sentence-Transformers", "PEFT/LoRA", "PyTorch", "UMAP", "HDBSCAN", "scikit-learn"]
+githubUrl: "https://github.com/rubsj/ai-portfolio/tree/main/03-contrastive-embeddings"
+demoType: "none"
+keyMetrics:
+  - label: "LoRA vs Standard"
+    value: "96.9%"
+  - label: "Trainable Params"
+    value: "0.32%"
+  - label: "Model Size Reduction"
+    value: "309x"
+  - label: "Total Hours"
+    value: "12"
+featured: false
+publishDate: 2026-02-20
+---
+
+import Callout from '~/components/mdx/Callout.astro';
+import MetricCard from '~/components/mdx/MetricCard.astro';
+import MetricsGrid from '~/components/mdx/MetricsGrid.astro';
+import MermaidDiagram from '~/components/mdx/MermaidDiagram.astro';
+
+## The Problem
+
+Pre-trained embedding models like all-MiniLM-L6-v2 produce general-purpose sentence embeddings, but they don't understand domain-specific similarity. Two sentences that are semantically related in your domain might land far apart in embedding space, while unrelated sentences cluster together. Fine-tuning fixes this — but full fine-tuning updates all 22.7 million parameters, producing an 86 MB model that's expensive to train and deploy.
+
+I wanted to answer a practical question: can LoRA (Low-Rank Adaptation) deliver comparable fine-tuning quality while training only a fraction of the parameters? If so, by how much does it reduce model size and training time? I built a head-to-head comparison using contrastive learning on sentence pairs, with a comprehensive evaluation suite to measure the gap precisely.
+
+## Architecture
+
+<MermaidDiagram chart={`graph TD
+  A[Training Data: Sentence Pairs] --> B[Base: all-MiniLM-L6-v2]
+  B --> C[Standard Fine-Tuning]
+  B --> D[LoRA Fine-Tuning]
+  C --> E[22.7M Parameters / 86.65 MB]
+  D --> F[73K Parameters / 0.28 MB]
+  E --> G[Evaluation Suite]
+  F --> G
+  G --> H[Spearman Correlation]
+  G --> I[AUC-ROC]
+  G --> J[Cohen's d Effect Size]
+  H --> K[UMAP Visualization]
+  I --> K
+  K --> L[Interactive HTML Report]`} />
+
+Both fine-tuning approaches start from the same base model (all-MiniLM-L6-v2) and train on identical sentence pairs using CosineSimilarityLoss. Standard fine-tuning updates all 22.7M parameters. LoRA injects low-rank adapter matrices into the attention layers, training only 73K parameters (0.32% of the model) while freezing everything else.
+
+The evaluation suite measures three complementary metrics: Spearman correlation (ranking quality), AUC-ROC (classification quality), and Cohen's d (effect size between similar and dissimilar pair distributions). UMAP visualizations show the embedding space structure before and after fine-tuning, and everything renders into an interactive HTML report.
+
+## Key Results
+
+<MetricsGrid>
+  <MetricCard label="LoRA vs Standard" value="96.9%" />
+  <MetricCard label="Trainable Params" value="0.32%" />
+  <MetricCard label="Model Size Reduction" value="309x" />
+  <MetricCard label="Training Speed" value="43% faster" />
+  <MetricCard label="Test Coverage" value="94%" />
+  <MetricCard label="Total Hours" value="12" />
+</MetricsGrid>
+
+The baseline model was actively wrong — Spearman correlation of -0.219, AUC-ROC of 0.185, and a negative Cohen's d of -0.419. The similarity margin between positive and negative pairs was -0.083, meaning the model rated dissimilar sentences as *more* similar than similar ones. It wasn't just bad; it was inverted.
+
+Standard fine-tuning fixed everything: Spearman jumped to 0.853, AUC-ROC to 0.954, and Cohen's d to 2.5. The similarity margin flipped from -0.083 to +0.903. These are production-grade numbers.
+
+LoRA achieved 96.9% of standard's performance across all metrics — with only 0.32% trainable parameters (73K vs 22.7M). The LoRA adapter is 0.28 MB compared to the full model's 86.65 MB — a 309x reduction in model size. Training completed in 35 seconds on an M2 MacBook Pro versus 61 seconds for standard (43% faster). The project includes 124 tests at 94% coverage, 8 comparison charts, and an interactive HTML report.
+
+## Key Decisions
+
+<Callout type="tip">
+**LoRA is production-viable for resource-constrained deployment.** At 96.9% of standard performance with a 309x smaller adapter, LoRA is the clear choice when you need to fine-tune for multiple domains or deploy on resource-limited infrastructure. The 3.1% quality gap is measurable but acceptable for most applications.
+</Callout>
+
+<Callout type="info">
+**QLoRA skipped — quantization unnecessary at this scale.** QLoRA combines LoRA with 4-bit quantization for models that don't fit in memory. all-MiniLM-L6-v2 is only 86 MB — it fits comfortably on any modern machine. Adding quantization would introduce precision loss for zero practical benefit.
+</Callout>
+
+<Callout type="info">
+**CosineSimilarityLoss for contrastive learning.** For binary sentence pair data (similar/dissimilar), CosineSimilarityLoss directly optimizes the cosine similarity between embeddings. It's simpler than triplet loss (no need for negative mining), converges reliably, and maps directly to the similarity metric used at inference time.
+</Callout>
+
+## The LoRA Learning Rate Discovery
+
+<Callout type="warning">
+**LoRA needs 10x higher learning rate — and nobody tells you this.** My first LoRA attempt used the same learning rate as standard fine-tuning (2e-5) and produced garbage results — metrics barely moved from baseline. The fix was bumping the learning rate to 2e-4. LoRA's low-rank adapter matrices have far fewer parameters absorbing the gradient signal, so they need a more aggressive learning rate to make meaningful updates. This 10x multiplier isn't documented anywhere obvious in the PEFT or sentence-transformers docs. I only found it through systematic hyperparameter search after the initial failure.
+</Callout>
+
+This was the most valuable lesson from the project. If I'd only run LoRA with the default learning rate, I would have concluded that LoRA doesn't work for sentence transformer fine-tuning — a completely wrong conclusion caused by a single hyperparameter.

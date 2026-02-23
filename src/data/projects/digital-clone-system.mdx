@@ -1,0 +1,15 @@
+---
+title: "Digital Clone System"
+description: "Style-matched content generation using multi-agent architecture — a digital clone that writes in your voice based on your writing samples."
+projectNumber: 8
+status: "planned"
+tags: ["multi-agent", "prompt-engineering"]
+techStack: ["Python", "CrewAI", "OpenAI", "LangChain"]
+demoType: "none"
+featured: false
+publishDate: 2026-02-22
+---
+
+Style imitation is one of the harder prompting challenges: generic LLMs produce generic prose. The Digital Clone System ingests a corpus of your own writing — blog posts, emails, LinkedIn content, Slack messages — and extracts stylistic fingerprints: sentence length distribution, vocabulary density, hedging patterns, preferred transition phrases, and structural habits. A CrewAI orchestration layer then uses these fingerprints to constrain generation, producing content that reads like you wrote it rather than like it came from a template.
+
+The system includes a style analysis agent (extracts fingerprints from writing samples), a drafting agent (produces initial content), and a style critic agent (evaluates alignment with fingerprint and requests targeted revisions). The critic loop runs until a similarity threshold is met, catching the most obvious generic-LLM artifacts.

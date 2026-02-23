@@ -1,0 +1,30 @@
+---
+export const prerender = true;
+
+import Layout from '~/layouts/PageLayout.astro';
+import Headline from '~/components/ui/Headline.astro';
+import ProjectCard from '~/components/projects/ProjectCard.astro';
+import { fetchProjects } from '~/utils/projects';
+
+const metadata = {
+  title: 'Projects',
+  description: '9 production-grade AI systems spanning synthetic data, RAG evaluation, LLM fine-tuning, and multi-agent orchestration.',
+};
+
+const projects = await fetchProjects();
+---
+
+<Layout metadata={metadata}>
+  <section class="py-8 sm:py-16 lg:py-20 mx-auto max-w-6xl px-4 sm:px-6">
+    <Headline
+      title="Projects"
+      subtitle="9 production-grade AI systems spanning the full applied AI stack."
+      classes={{ container: 'mb-10 text-center' }}
+    />
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {projects.map((project) => (
+        <ProjectCard project={project} />
+      ))}
+    </div>
+  </section>
+</Layout>

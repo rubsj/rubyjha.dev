@@ -65,6 +65,33 @@ const postCollection = defineCollection({
   }),
 });
 
+const projectCollection = defineCollection({
+  loader: glob({ pattern: ['*.md', '*.mdx'], base: 'src/data/projects' }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    projectNumber: z.number(),
+    status: z.enum(['completed', 'in-progress', 'planned']),
+    tags: z.array(z.string()),
+    techStack: z.array(z.string()),
+    githubUrl: z.string().url().optional(),
+    demoUrl: z.string().url().optional(),
+    demoType: z.enum(['streamlit', 'loom', 'github', 'none']).default('none'),
+    keyMetrics: z
+      .array(
+        z.object({
+          label: z.string(),
+          value: z.string(),
+        })
+      )
+      .optional(),
+    image: z.string().optional(),
+    featured: z.boolean().default(false),
+    publishDate: z.date(),
+  }),
+});
+
 export const collections = {
   post: postCollection,
+  project: projectCollection,
 };
