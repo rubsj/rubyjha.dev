@@ -8,7 +8,8 @@ import { fetchProjects } from '~/utils/projects';
 
 const metadata = {
   title: 'Projects',
-  description: '9 production-grade AI systems spanning synthetic data, RAG evaluation, LLM fine-tuning, and multi-agent orchestration.',
+  description:
+    '9 production-grade AI systems spanning synthetic data, RAG evaluation, LLM fine-tuning, and multi-agent orchestration.',
 };
 
 const projects = await fetchProjects();
@@ -22,9 +23,7 @@ const projects = await fetchProjects();
       classes={{ container: 'mb-10 text-center' }}
     />
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {projects.map((project) => (
-        <ProjectCard project={project} />
-      ))}
+      {projects.map((project) => <ProjectCard project={project} />)}
     </div>
   </section>
 </Layout>

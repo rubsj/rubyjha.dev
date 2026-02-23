@@ -10,7 +10,10 @@ const { project } = Astro.props;
 
 const statusConfig = {
   completed: { label: 'Completed', classes: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
-  'in-progress': { label: 'In Progress', classes: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' },
+  'in-progress': {
+    label: 'In Progress',
+    classes: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  },
   planned: { label: 'Planned', classes: 'bg-gray-100 text-gray-700 dark:bg-gray-700/40 dark:text-gray-400' },
 };
 
@@ -38,9 +41,15 @@ const visibleTechStack = project.techStack.slice(0, 5);
         Project {String(project.projectNumber).padStart(2, '0')}
       </span>
       <div class="flex items-center gap-2">
-        {demoIcon && (
-          <Icon name={demoIcon} class="h-4 w-4 text-gray-400 dark:text-slate-500" title={`Demo: ${project.demoType}`} />
-        )}
+        {
+          demoIcon && (
+            <Icon
+              name={demoIcon}
+              class="h-4 w-4 text-gray-400 dark:text-slate-500"
+              title={`Demo: ${project.demoType}`}
+            />
+          )
+        }
         <span class={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${status.classes}`}>
           {status.label}
         </span>
@@ -48,7 +57,9 @@ const visibleTechStack = project.techStack.slice(0, 5);
     </div>
 
     <!-- Title -->
-    <h3 class="text-lg font-bold font-heading leading-tight text-slate-900 dark:text-white mb-2 group-hover:text-primary dark:group-hover:text-blue-400 transition-colors">
+    <h3
+      class="text-lg font-bold font-heading leading-tight text-slate-900 dark:text-white mb-2 group-hover:text-primary dark:group-hover:text-blue-400 transition-colors"
+    >
       {project.title}
     </h3>
 
@@ -59,16 +70,20 @@ const visibleTechStack = project.techStack.slice(0, 5);
 
     <!-- Tech stack pills -->
     <div class="flex flex-wrap gap-1">
-      {visibleTechStack.map((tech) => (
-        <span class="rounded bg-gray-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-medium text-gray-600 dark:text-slate-300">
-          {tech}
-        </span>
-      ))}
-      {project.techStack.length > 5 && (
-        <span class="rounded bg-gray-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-medium text-gray-500 dark:text-slate-400">
-          +{project.techStack.length - 5}
-        </span>
-      )}
+      {
+        visibleTechStack.map((tech) => (
+          <span class="rounded bg-gray-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-medium text-gray-600 dark:text-slate-300">
+            {tech}
+          </span>
+        ))
+      }
+      {
+        project.techStack.length > 5 && (
+          <span class="rounded bg-gray-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-medium text-gray-500 dark:text-slate-400">
+            +{project.techStack.length - 5}
+          </span>
+        )
+      }
     </div>
   </div>
 </article>

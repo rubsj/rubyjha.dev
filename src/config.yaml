@@ -1,5 +1,5 @@
 site:
-  name: "Ruby Jha"
+  name: 'Ruby Jha'
   site: 'https://rubyjha.dev'
   base: '/'
   trailingSlash: false
@@ -11,12 +11,12 @@ metadata:
   title:
     default: Ruby Jha
     template: '%s — Ruby Jha'
-  description: "Engineering Manager and AI Systems Builder. 20+ years of enterprise experience in Financial Services and Healthcare. Building production-grade AI systems spanning RAG, fine-tuning, and multi-agent orchestration."
+  description: 'Engineering Manager and AI Systems Builder. 20+ years of enterprise experience in Financial Services and Healthcare. Building production-grade AI systems spanning RAG, fine-tuning, and multi-agent orchestration.'
   robots:
     index: true
     follow: true
   openGraph:
-    site_name: "Ruby Jha"
+    site_name: 'Ruby Jha'
     images:
       - url: '~/assets/images/default.png'
         width: 1200

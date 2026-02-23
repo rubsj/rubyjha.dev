@@ -1,21 +1,22 @@
 ---
-title: "RAG Evaluation Pipeline"
-description: "Systematic RAG evaluation comparing 15 vector configurations across chunking strategies, embedding models, and reranking. Best config achieved Recall@5 of 0.747, beating BM25 baseline by 96%."
+title: 'RAG Evaluation Pipeline'
+description: 'Systematic RAG evaluation comparing 15 vector configurations across chunking strategies, embedding models, and reranking. Best config achieved Recall@5 of 0.747, beating BM25 baseline by 96%.'
 projectNumber: 2
-status: "completed"
-tags: ["rag", "embeddings", "llm-evaluation", "vector-databases"]
-techStack: ["Python", "LangChain", "RAGAS", "Sentence-Transformers", "Braintrust", "FAISS", "Cohere", "OpenAI", "Click CLI"]
-githubUrl: "https://github.com/rubsj/ai-portfolio/tree/main/02-rag-evaluation"
-demoType: "streamlit"
+status: 'completed'
+tags: ['rag', 'embeddings', 'llm-evaluation', 'vector-databases']
+techStack:
+  ['Python', 'LangChain', 'RAGAS', 'Sentence-Transformers', 'Braintrust', 'FAISS', 'Cohere', 'OpenAI', 'Click CLI']
+githubUrl: 'https://github.com/rubsj/ai-portfolio/tree/main/02-rag-evaluation'
+demoType: 'streamlit'
 keyMetrics:
-  - label: "Best Recall@5"
-    value: "0.747"
-  - label: "vs BM25 Baseline"
-    value: "+96%"
-  - label: "Test Coverage"
-    value: "95%"
-  - label: "Total Hours"
-    value: "19"
+  - label: 'Best Recall@5'
+    value: '0.747'
+  - label: 'vs BM25 Baseline'
+    value: '+96%'
+  - label: 'Test Coverage'
+    value: '95%'
+  - label: 'Total Hours'
+    value: '19'
 featured: true
 publishDate: 2026-02-17
 ---
@@ -33,7 +34,8 @@ I built a multi-strategy evaluation pipeline to answer concrete questions: Does 
 
 ## Architecture
 
-<MermaidDiagram chart={`graph TD
+<MermaidDiagram
+  chart={`graph TD
   A[Document Corpus] --> B[Chunking Strategies]
   B --> C[Fixed-Size Chunking]
   B --> D[Semantic Chunking]
@@ -47,7 +49,8 @@ I built a multi-strategy evaluation pipeline to answer concrete questions: Does 
   I --> J[Cohere Reranker]
   J --> K[RAGAS Evaluation]
   K --> L[Recall@5 / Faithfulness / Relevancy]
-  L --> M[Braintrust Tracking]`} />
+  L --> M[Braintrust Tracking]`}
+/>
 
 The pipeline processes a document corpus through two chunking strategies (fixed-size with configurable overlap, and semantic chunking using sentence-transformers), embeds with either OpenAI's API or local sentence-transformer models, stores in FAISS, retrieves with optional Cohere reranking, and evaluates using RAGAS metrics. Every configuration gets the same test questions, and every result lands in Braintrust for side-by-side comparison.
 
@@ -75,19 +78,28 @@ The project includes 384+ tests at 95% coverage, 12 analytical charts, a 7-page 
 ## Key Decisions
 
 <Callout type="tip">
-**FAISS over ChromaDB.** For a corpus under 1,000 vectors, FAISS brute-force search gives you exact nearest-neighbor results with zero configuration. ChromaDB adds a server dependency, approximate search (unnecessary at this scale), and setup complexity. Brute-force is the correct choice when your dataset fits in memory — and for evaluation purposes, exact results eliminate a variable.
+  **FAISS over ChromaDB.** For a corpus under 1,000 vectors, FAISS brute-force search gives you exact nearest-neighbor
+  results with zero configuration. ChromaDB adds a server dependency, approximate search (unnecessary at this scale),
+  and setup complexity. Brute-force is the correct choice when your dataset fits in memory — and for evaluation
+  purposes, exact results eliminate a variable.
 </Callout>
 
 <Callout type="info">
-**Semantic chunking validated by grid search.** I didn't assume semantic chunking would win — I tested it head-to-head against fixed-size chunking across every embedding model. The 3-22% improvement was consistent enough to declare it the default strategy. The grid search approach is the point: don't guess at configurations, measure them.
+  **Semantic chunking validated by grid search.** I didn't assume semantic chunking would win — I tested it head-to-head
+  against fixed-size chunking across every embedding model. The 3-22% improvement was consistent enough to declare it
+  the default strategy. The grid search approach is the point: don't guess at configurations, measure them.
 </Callout>
 
 <Callout type="info">
-**OpenAI embeddings win on cost-quality tradeoff.** At $0.02 per million tokens, OpenAI's text-embedding-3-small beats local sentence-transformer models by 26% on retrieval quality. The local models have zero marginal cost, but unless you're processing millions of documents, the API cost is negligible compared to the quality gap.
+  **OpenAI embeddings win on cost-quality tradeoff.** At $0.02 per million tokens, OpenAI's text-embedding-3-small beats
+  local sentence-transformer models by 26% on retrieval quality. The local models have zero marginal cost, but unless
+  you're processing millions of documents, the API cost is negligible compared to the quality gap.
 </Callout>
 
 <Callout type="tip">
-**Cohere reranking as second-stage improvement.** Reranking improved the best configuration's Recall@5 by 19.5% (0.625 → 0.747). It's a cheap second pass that re-scores retrieved chunks using a cross-encoder — more expensive per query than embedding similarity, but applied only to the top-k results rather than the full corpus.
+  **Cohere reranking as second-stage improvement.** Reranking improved the best configuration's Recall@5 by 19.5% (0.625
+  → 0.747). It's a cheap second pass that re-scores retrieved chunks using a cross-encoder — more expensive per query
+  than embedding similarity, but applied only to the top-k results rather than the full corpus.
 </Callout>
 
 ## What I Learned

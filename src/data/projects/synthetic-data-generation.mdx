@@ -1,21 +1,21 @@
 ---
-title: "Synthetic Data Generation Pipeline"
-description: "Schema-driven synthetic data generation with Pydantic validation, LLM-as-Judge quality scoring, and iterative correction loops. 100% generation success rate across 30 records."
+title: 'Synthetic Data Generation Pipeline'
+description: 'Schema-driven synthetic data generation with Pydantic validation, LLM-as-Judge quality scoring, and iterative correction loops. 100% generation success rate across 30 records.'
 projectNumber: 1
-status: "completed"
-tags: ["synthetic-data", "pydantic", "llm-evaluation"]
-techStack: ["Python", "Pydantic", "OpenAI API", "GPT-4o-mini", "GPT-4o", "Streamlit"]
-githubUrl: "https://github.com/rubsj/ai-portfolio/tree/main/01-synthetic-data-home-diy"
-demoType: "streamlit"
+status: 'completed'
+tags: ['synthetic-data', 'pydantic', 'llm-evaluation']
+techStack: ['Python', 'Pydantic', 'OpenAI API', 'GPT-4o-mini', 'GPT-4o', 'Streamlit']
+githubUrl: 'https://github.com/rubsj/ai-portfolio/tree/main/01-synthetic-data-home-diy'
+demoType: 'streamlit'
 keyMetrics:
-  - label: "Generation Success"
-    value: "100%"
-  - label: "Judge Calibration"
-    value: "20% failure rate"
-  - label: "Correction Improvement"
-    value: "78% reduction"
-  - label: "Total Hours"
-    value: "14"
+  - label: 'Generation Success'
+    value: '100%'
+  - label: 'Judge Calibration'
+    value: '20% failure rate'
+  - label: 'Correction Improvement'
+    value: '78% reduction'
+  - label: 'Total Hours'
+    value: '14'
 featured: false
 publishDate: 2026-02-15
 ---
@@ -33,7 +33,8 @@ The core challenge wasn't just generation — GPT-4o-mini can produce plausible-
 
 ## Architecture
 
-<MermaidDiagram chart={`graph TD
+<MermaidDiagram
+  chart={`graph TD
   A[Home DIY Topics] --> B[Pydantic Schema Definition]
   B --> C[GPT-4o-mini: Record Generation]
   C --> D[30 Synthetic Records]
@@ -43,7 +44,8 @@ The core challenge wasn't just generation — GPT-4o-mini can produce plausible-
   F -->|No| H[Correction Loop]
   H --> C
   G --> I[Streamlit Dashboard]
-  I --> J[Story Mode + Analytics]`} />
+  I --> J[Story Mode + Analytics]`}
+/>
 
 The pipeline uses a two-model architecture. GPT-4o-mini handles generation — it's fast, cheap, and produces structurally sound records when given a well-defined Pydantic schema. GPT-4o serves as the LLM-as-Judge, evaluating each record against quality criteria that go beyond schema validation: semantic consistency, realistic values, and cross-field coherence.
 
@@ -69,19 +71,29 @@ The 6-page Streamlit dashboard includes a Story Mode that walks through the enti
 ## Key Decisions
 
 <Callout type="tip">
-**Instructor over Raw API.** Instructor wraps Pydantic models directly into the OpenAI API call, giving you structured output extraction with automatic retry on validation failures. This eliminated an entire class of parsing bugs and let me focus on schema design rather than response parsing.
+  **Instructor over Raw API.** Instructor wraps Pydantic models directly into the OpenAI API call, giving you structured
+  output extraction with automatic retry on validation failures. This eliminated an entire class of parsing bugs and let
+  me focus on schema design rather than response parsing.
 </Callout>
 
 <Callout type="info">
-**Flat schema over nested.** I started with a deeply nested Pydantic model (materials containing sub-items, steps containing sub-steps) but found that GPT-4o-mini struggled with deep nesting — it would hallucinate extra levels or collapse hierarchies. Flattening to a single-level schema with string-encoded lists dramatically improved generation quality and made the correction loop simpler to implement.
+  **Flat schema over nested.** I started with a deeply nested Pydantic model (materials containing sub-items, steps
+  containing sub-steps) but found that GPT-4o-mini struggled with deep nesting — it would hallucinate extra levels or
+  collapse hierarchies. Flattening to a single-level schema with string-encoded lists dramatically improved generation
+  quality and made the correction loop simpler to implement.
 </Callout>
 
 <Callout type="info">
-**Judge calibration strategy.** A judge that approves everything is worthless. I iterated through four prompt versions, progressively adding specificity: field-level validation rules, cross-field consistency checks, and domain-specific plausibility criteria. The 20% failure rate wasn't arbitrary — it matched my manual review of a held-out sample.
+  **Judge calibration strategy.** A judge that approves everything is worthless. I iterated through four prompt
+  versions, progressively adding specificity: field-level validation rules, cross-field consistency checks, and
+  domain-specific plausibility criteria. The 20% failure rate wasn't arbitrary — it matched my manual review of a
+  held-out sample.
 </Callout>
 
 <Callout type="warning">
-**Template improvement over record-level patching.** When the judge found systematic issues (e.g., all difficulty ratings skewing "Easy"), I fixed the generation template rather than patching individual records. This is documented across 4 ADRs in the repository — each capturing a specific failure pattern and the template change that resolved it.
+  **Template improvement over record-level patching.** When the judge found systematic issues (e.g., all difficulty
+  ratings skewing "Easy"), I fixed the generation template rather than patching individual records. This is documented
+  across 4 ADRs in the repository — each capturing a specific failure pattern and the template change that resolved it.
 </Callout>
 
 ## Deliverables
