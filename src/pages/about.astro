@@ -3,6 +3,7 @@ import CallToAction from '~/components/widgets/CallToAction.astro';
 import Features2 from '~/components/widgets/Features2.astro';
 import CareerTimeline from '~/components/CareerTimeline.astro';
 import Layout from '~/layouts/PageLayout.astro';
+import PersonJsonLd from '~/components/common/PersonJsonLd.astro';
 
 const metadata = {
   title: 'About',
@@ -123,4 +124,5 @@ const metadata = {
       >.
     </Fragment>
   </CallToAction>
+  <PersonJsonLd />
 </Layout>

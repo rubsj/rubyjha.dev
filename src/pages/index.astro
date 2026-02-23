@@ -9,6 +9,7 @@ import ProjectCard from '~/components/projects/ProjectCard.astro';
 
 import { findFeaturedProjects } from '~/utils/projects';
 import { findLatestPosts } from '~/utils/blog';
+import PersonJsonLd from '~/components/common/PersonJsonLd.astro';
 
 const metadata = {
   title: 'Ruby Jha',
@@ -117,4 +118,5 @@ const latestPosts = await findLatestPosts({ count: 3 });
       </div>
     </div>
   </section>
+  <PersonJsonLd />
 </Layout>

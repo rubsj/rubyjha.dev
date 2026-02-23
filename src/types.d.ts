@@ -50,6 +50,11 @@ export interface Post {
   /**  */
   author?: string;
 
+  /** Series this post belongs to (e.g., "9-ai-projects") */
+  series?: string;
+  /** Position within the series */
+  seriesOrder?: number;
+
   /**  */
   metadata?: MetaData;
 
