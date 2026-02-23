@@ -1,228 +1,129 @@
 ---
+import CallToAction from '~/components/widgets/CallToAction.astro';
 import Features2 from '~/components/widgets/Features2.astro';
-import Features3 from '~/components/widgets/Features3.astro';
-import Hero from '~/components/widgets/Hero.astro';
-import Stats from '~/components/widgets/Stats.astro';
-import Steps2 from '~/components/widgets/Steps2.astro';
+import CareerTimeline from '~/components/CareerTimeline.astro';
 import Layout from '~/layouts/PageLayout.astro';
 
 const metadata = {
-  title: 'About us',
+  title: 'About',
+  description:
+    'Engineering Manager and AI Systems Builder with 20+ years of enterprise experience. Building production-grade AI systems while leading global engineering teams.',
 };
 ---
 
 <Layout metadata={metadata}>
-  <!-- Hero Widget ******************* -->
+  <!-- Page Header -->
+  <section class="py-12 md:py-16 px-4 sm:px-6 bg-gradient-to-b from-indigo-50/50 to-transparent dark:from-indigo-950/20 dark:to-transparent">
+    <div class="max-w-3xl mx-auto text-center">
+      <p class="text-sm font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-3">
+        About Me
+      </p>
+      <h1 class="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4">Ruby Jha</h1>
+      <p class="text-xl md:text-2xl text-slate-600 dark:text-slate-300 font-medium">
+        Engineering Manager | AI Systems Builder
+      </p>
+      <p class="mt-4 text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
+        I build AI systems and the teams that ship them.
+      </p>
+    </div>
+  </section>
 
-  <Hero
-    tagline="About us"
-    image={{
-      src: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-      alt: 'Caos Image',
-    }}
-  >
-    <Fragment slot="title">
-      Elevate your online presence with our <br />
-      <span class="text-accent dark:text-white"> Beautiful Website Templates</span>
-    </Fragment>
+  <!-- Professional Narrative -->
+  <section class="py-10 px-4 sm:px-6">
+    <div class="max-w-3xl mx-auto">
+      <div class="prose prose-lg dark:prose-invert max-w-none space-y-6 text-slate-700 dark:text-slate-300">
+        <p>
+          I'm an Engineering Manager who still writes code. With 20+ years building enterprise platforms across
+          Financial Services and Healthcare, I'm now doing something different: building production-grade AI systems
+          while continuing to lead engineering teams. I sit at the intersection of traditional engineering leadership
+          and applied AI — and that's exactly where I want to be.
+        </p>
+        <p>
+          My track record speaks in numbers. At State Street, I owned platform strategy for a Self-Service Portal
+          serving 40+ enterprise customers across 7 global regions — US, Canada, UK, EMEA, Australia, Singapore, and
+          Japan. That work drove $250K/month in sustained operational cost savings and a 60% reduction in support
+          demand. At Centene, I led modernization of a healthcare platform covering approximately 44 million lives. At
+          EY, I managed a 12-engineer cross-functional organization spanning US, India, and Poland with zero
+          non-compliance findings across CMMI Level 3 audits.
+        </p>
+        <p>
+          In 2025, I made a deliberate pivot: instead of just managing teams that build AI systems, I started building
+          them myself. I'm now working through a portfolio of 9 production-grade AI projects spanning the full applied
+          AI stack — synthetic data generation, RAG evaluation frameworks, LLM fine-tuning pipelines, multi-agent
+          orchestration with CrewAI, and production RAG pipelines with Cohere reranking. The stack: Python, OpenAI,
+          LangChain, ChromaDB, RAGAS, Braintrust, FastAPI. I'm not a tourist in AI. I'm a practitioner building real
+          systems with real evaluation metrics.
+        </p>
+        <p>
+          I'm looking for my next role as an Engineering Manager or AI Engineering Leader at a company pushing the
+          frontier of applied AI. What I bring is rare: enterprise engineering credibility earned in regulated,
+          high-stakes environments combined with hands-on capability to architect and build AI systems from scratch.
+          I've led global teams through complex platform modernizations, and I'm now building the AI literacy to lead
+          teams doing the same with LLMs and agents.
+        </p>
+      </div>
+    </div>
+  </section>
 
-    <Fragment slot="subtitle">
-      Donec efficitur, ipsum quis congue luctus, mauris magna convallis mauris, eu auctor nisi lectus non augue. Donec
-      quis lorem non massa vulputate efficitur ac at turpis. Sed tincidunt ex a nunc convallis, et lobortis nisi tempus.
-      Suspendisse vitae nisi eget tortor luctus maximus sed non lectus.
-    </Fragment>
-  </Hero>
+  <!-- Career Timeline -->
+  <section class="py-10 px-4 sm:px-6">
+    <div class="max-w-3xl mx-auto">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-8">Career Timeline</h2>
+      <CareerTimeline />
+    </div>
+  </section>
 
-  <!-- Stats Widget ****************** -->
-
-  <Stats
-    title="Statistics about us"
-    stats={[
-      { title: 'Offices', amount: '4' },
-      { title: 'Employees', amount: '248' },
-      { title: 'Templates', amount: '12' },
-      { title: 'Awards', amount: '24' },
-    ]}
-  />
-
-  <!-- Features3 Widget ************** -->
-
-  <Features3
-    title="Our templates"
-    subtitle="Etiam scelerisque, enim eget vestibulum luctus, nibh mauris blandit nulla, nec vestibulum risus justo ut enim. Praesent lacinia diam et ante imperdiet euismod."
-    columns={3}
-    isBeforeContent={true}
-    items={[
-      {
-        title: 'Educational',
-        description:
-          'Morbi faucibus luctus quam, sit amet aliquet felis tempor id. Cras augue massa, ornare quis dignissim a, molestie vel nulla.',
-        icon: 'tabler:template',
-      },
-      {
-        title: 'Interior Design',
-        description:
-          'Vivamus porttitor, tortor convallis aliquam pretium, turpis enim consectetur elit, vitae egestas purus erat ac nunc nulla.',
-        icon: 'tabler:template',
-      },
-      {
-        title: 'Photography',
-        description:
-          'Duis sed lectus in nisl vehicula porttitor eget quis odio. Aliquam erat volutpat. Nulla eleifend nulla id sem fermentum.',
-        icon: 'tabler:template',
-      },
-    ]}
-  />
-
-  <!-- Features3 Widget ************** -->
-
-  <Features3
-    columns={3}
-    isAfterContent={true}
-    items={[
-      {
-        title: 'E-commerce',
-        description:
-          'Rutrum non odio at vehicula. Proin ipsum justo, dignissim in vehicula sit amet, dignissim id quam. Sed ac tincidunt sapien.',
-        icon: 'tabler:template',
-      },
-      {
-        title: 'Blog',
-        description:
-          'Nullam efficitur volutpat sem sed fringilla. Suspendisse et enim eu orci volutpat laoreet ac vitae libero.',
-        icon: 'tabler:template',
-      },
-      {
-        title: 'Business',
-        description:
-          'Morbi et elit finibus, facilisis justo ut, pharetra ipsum. Donec efficitur, ipsum quis congue luctus, mauris magna.',
-        icon: 'tabler:template',
-      },
-      {
-        title: 'Branding',
-        description:
-          'Suspendisse vitae nisi eget tortor luctus maximus sed non lectus. Cras malesuada pretium placerat. Nullam venenatis dolor a ante rhoncus.',
-        icon: 'tabler:template',
-      },
-      {
-        title: 'Medical',
-        description:
-          'Vestibulum malesuada lacus id nibh posuere feugiat. Nam volutpat nulla a felis ultrices, id suscipit mauris congue. In hac habitasse platea dictumst.',
-        icon: 'tabler:template',
-      },
-      {
-        title: 'Fashion Design',
-        description:
-          'Maecenas eu tellus eget est scelerisque lacinia et a diam. Aliquam velit lorem, vehicula id fermentum et, rhoncus et purus.',
-        icon: 'tabler:template',
-      },
-    ]}
-    image={{
-      src: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80',
-      alt: 'Colorful Image',
-    }}
-  />
-
-  <!-- Steps2 Widget ****************** -->
-
-  <Steps2
-    title="Our values"
-    subtitle="Maecenas eu tellus eget est scelerisque lacinia et a diam. Aliquam velit lorem, vehicula id fermentum et, rhoncus et purus. Nulla facilisi. Vestibulum malesuada lacus."
-    items={[
-      {
-        title: 'Customer-centric approach',
-        description:
-          'Donec id nibh neque. Quisque et fermentum tortor. Fusce vitae dolor a mauris dignissim commodo. Ut eleifend luctus condimentum.',
-      },
-      {
-        title: 'Constant Improvement',
-        description:
-          'Phasellus laoreet fermentum venenatis. Vivamus dapibus pulvinar arcu eget mattis. Fusce eget mauris leo.',
-      },
-      {
-        title: 'Ethical Practices',
-        description:
-          'Vestibulum imperdiet libero et lectus molestie, et maximus augue porta. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.',
-      },
-    ]}
-  />
-
-  <!-- Steps2 Widget ****************** -->
-
-  <Steps2
-    title="Achievements"
-    subtitle="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi sagittis, quam nec venenatis lobortis, mi risus tempus nulla, sed porttitor est nibh at nulla."
-    isReversed={true}
-    callToAction={{
-      text: 'See more',
-      href: '/',
-    }}
-    items={[
-      {
-        title: 'Global reach',
-        description: 'Nam malesuada urna in enim imperdiet tincidunt. Phasellus non tincidunt nisi, at elementum mi.',
-        icon: 'tabler:globe',
-      },
-      {
-        title: 'Positive customer feedback and reviews',
-        description:
-          'Cras semper nulla leo, eget laoreet erat cursus sed. Praesent faucibus massa in purus iaculis dictum.',
-        icon: 'tabler:message-star',
-      },
-      {
-        title: 'Awards and recognition as industry experts',
-        description:
-          'Phasellus lacinia cursus velit, eu malesuada magna pretium eu. Etiam aliquet tellus purus, blandit lobortis ex rhoncus vitae.',
-        icon: 'tabler:award',
-      },
-    ]}
-  />
-
-  <!-- Features2 Widget ************** -->
-
+  <!-- Current Focus Areas -->
   <Features2
-    title="Our locations"
-    tagline="Find us"
-    columns={4}
-    items={[
-      {
-        title: 'EE.UU',
-        description: '1234 Lorem Ipsum St, 12345, Miami',
-      },
-      {
-        title: 'Spain',
-        description: '5678 Lorem Ipsum St, 56789, Madrid',
-      },
-      {
-        title: 'Australia',
-        description: '9012 Lorem Ipsum St, 90123, Sydney',
-      },
-      {
-        title: 'Brazil',
-        description: '3456 Lorem Ipsum St, 34567, São Paulo',
-      },
-    ]}
-  />
-
-  <!-- Features2 Widget ************** -->
-
-  <Features2
-    title="Technical Support"
-    tagline="Contact us"
+    title="Current Focus Areas"
+    tagline="What I'm Building"
     columns={2}
     items={[
       {
-        title: 'Chat with us',
+        title: 'Applied AI Systems',
         description:
-          'Integer luctus laoreet libero, auctor varius purus rutrum sit amet. Ut nec molestie nisi, quis eleifend mi.',
-        icon: 'tabler:messages',
+          'Building 9 production-grade AI projects: RAG pipelines with evaluation frameworks, LLM fine-tuning with Braintrust, multi-agent orchestration with CrewAI, and synthetic data generation. Every project has real metrics, real architecture decisions, and honest tradeoffs.',
+        icon: 'tabler:brain',
       },
       {
-        title: 'Call us',
+        title: 'Engineering Leadership',
         description:
-          'Mauris faucibus finibus orci, in posuere elit viverra non. In hac habitasse platea dictumst. Cras lobortis metus a hendrerit congue.',
-        icon: 'tabler:headset',
+          'Engineering Manager with 7+ years of direct people management. Scaled global teams across US, India, and Poland. Delivered platform transformations in Banking, Healthcare, and Financial Services. Now bridging traditional engineering leadership with applied AI.',
+        icon: 'tabler:users',
       },
     ]}
   />
+
+  <!-- Contact & Resume -->
+  <CallToAction
+    actions={[
+      {
+        variant: 'primary',
+        text: 'Download Resume',
+        href: '/Ruby_Jha_Resume.pdf',
+        target: '_blank',
+        icon: 'tabler:download',
+      },
+      {
+        variant: 'secondary',
+        text: 'LinkedIn',
+        href: 'https://linkedin.com/in/jharuby',
+        target: '_blank',
+        icon: 'tabler:brand-linkedin',
+      },
+    ]}
+  >
+    <Fragment slot="title">Get in Touch</Fragment>
+    <Fragment slot="subtitle">
+      Open to Engineering Manager and AI Engineering Leader roles. Reach me at{' '}
+      <a href="mailto:rubyjha.jnv@gmail.com" class="text-primary hover:underline">rubyjha.jnv@gmail.com</a>
+      {' '}or find me on{' '}
+      <a
+        href="https://github.com/rubsj"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-primary hover:underline">GitHub</a
+      >.
+    </Fragment>
+  </CallToAction>
 </Layout>
