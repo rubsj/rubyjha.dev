@@ -90,7 +90,7 @@ import { UI } from 'astrowind:config';
           break;
         case 'copy':
           navigator.clipboard.writeText(decodeURIComponent(url)).then(function () {
-            var toast = document.createElement('div');
+            const toast = document.createElement('div');
             toast.textContent = 'Link copied!';
             toast.className =
               'fixed bottom-4 right-4 bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm z-50 transition-opacity duration-300';
