@@ -1,0 +1,33 @@
+---
+export const prerender = true;
+
+import Layout from '~/layouts/PageLayout.astro';
+import SingleProject from '~/components/projects/SingleProject.astro';
+import { fetchProjects } from '~/utils/projects';
+import type { Project } from '~/types';
+
+export const getStaticPaths = async () => {
+  const projects = await fetchProjects();
+  return projects.map((project) => ({
+    params: { slug: project.slug },
+    props: { project },
+  }));
+};
+
+interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+
+const metadata = {
+  title: project.title,
+  description: project.description,
+};
+---
+
+<Layout metadata={metadata}>
+  <SingleProject project={project} url={Astro.url}>
+    {project.Content ? <project.Content /> : <Fragment set:html={''} />}
+  </SingleProject>
+</Layout>

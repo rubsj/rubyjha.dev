@@ -1,0 +1,101 @@
+---
+title: 'Synthetic Data Generation Pipeline'
+description: 'Schema-driven synthetic data generation with Pydantic validation, LLM-as-Judge quality scoring, and iterative correction loops. 100% generation success rate across 30 records.'
+projectNumber: 1
+status: 'completed'
+tags: ['synthetic-data', 'pydantic', 'llm-evaluation']
+techStack: ['Python', 'Pydantic', 'OpenAI API', 'GPT-4o-mini', 'GPT-4o', 'Streamlit']
+githubUrl: 'https://github.com/rubsj/ai-portfolio/tree/main/01-synthetic-data-home-diy'
+demoType: 'streamlit'
+keyMetrics:
+  - label: 'Generation Success'
+    value: '100%'
+  - label: 'Judge Calibration'
+    value: '20% failure rate'
+  - label: 'Correction Improvement'
+    value: '78% reduction'
+  - label: 'Total Hours'
+    value: '14'
+featured: false
+publishDate: 2026-02-15
+---
+
+import Callout from '~/components/mdx/Callout.astro';
+import MetricCard from '~/components/mdx/MetricCard.astro';
+import MetricsGrid from '~/components/mdx/MetricsGrid.astro';
+import MermaidDiagram from '~/components/mdx/MermaidDiagram.astro';
+
+## The Problem
+
+Real-world datasets for AI training are scarce, expensive to label, and constrained by privacy regulations. When I needed training data for a home DIY domain, I couldn't find a suitable public dataset — and manual creation would have taken weeks. I needed an automated pipeline that could generate high-quality synthetic records with strict schema enforcement, then validate them independently to catch hallucinations and inconsistencies before they poisoned downstream models.
+
+The core challenge wasn't just generation — GPT-4o-mini can produce plausible-looking records all day. The hard part was building a quality gate rigorous enough to catch subtle failures: fields that pass type checks but contain nonsensical values, descriptions that contradict their categories, or difficulty ratings that don't match the actual complexity of a task.
+
+## Architecture
+
+<MermaidDiagram
+  chart={`graph TD
+  A[Home DIY Topics] --> B[Pydantic Schema Definition]
+  B --> C[GPT-4o-mini: Record Generation]
+  C --> D[30 Synthetic Records]
+  D --> E[GPT-4o: LLM-as-Judge]
+  E --> F{Pass Validation?}
+  F -->|Yes| G[Valid Records]
+  F -->|No| H[Correction Loop]
+  H --> C
+  G --> I[Streamlit Dashboard]
+  I --> J[Story Mode + Analytics]`}
+/>
+
+The pipeline uses a two-model architecture. GPT-4o-mini handles generation — it's fast, cheap, and produces structurally sound records when given a well-defined Pydantic schema. GPT-4o serves as the LLM-as-Judge, evaluating each record against quality criteria that go beyond schema validation: semantic consistency, realistic values, and cross-field coherence.
+
+I used the Instructor library to extract structured outputs from both models. This was a deliberate choice over raw API calls — Instructor wraps Pydantic validation directly into the API call, so malformed responses get retried automatically instead of silently passing through.
+
+## Key Results
+
+<MetricsGrid>
+  <MetricCard label="Generation Success" value="100%" />
+  <MetricCard label="Judge Calibration" value="20% failure rate" />
+  <MetricCard label="Correction Improvement" value="78% reduction" />
+  <MetricCard label="Records Generated" value="30" />
+  <MetricCard label="Streamlit Pages" value="6" />
+  <MetricCard label="Analytical Charts" value="7" />
+</MetricsGrid>
+
+The generation pipeline achieved a 100% success rate across all 30 records — every record passed Pydantic schema validation on the first attempt. The more interesting story is the judge calibration. My first judge prompt approved everything — a 0% failure rate that meant the judge was useless. After four rounds of prompt refinement, I calibrated it to a 20% failure rate, which matched my manual assessment of record quality.
+
+The correction loop proved its value in hard numbers: V1 evaluation flagged 36 failures across the dataset. After running corrections on the 12 worst records, V2 dropped to just 8 failures — a 78% reduction. The corrected records weren't just patched; they were regenerated with specific guidance from the judge's feedback.
+
+The 6-page Streamlit dashboard includes a Story Mode that walks through the entire pipeline narrative, plus analytics pages with Jaccard similarity analysis and correlation heatmaps across 7 charts.
+
+## Key Decisions
+
+<Callout type="tip">
+  **Instructor over Raw API.** Instructor wraps Pydantic models directly into the OpenAI API call, giving you structured
+  output extraction with automatic retry on validation failures. This eliminated an entire class of parsing bugs and let
+  me focus on schema design rather than response parsing.
+</Callout>
+
+<Callout type="info">
+  **Flat schema over nested.** I started with a deeply nested Pydantic model (materials containing sub-items, steps
+  containing sub-steps) but found that GPT-4o-mini struggled with deep nesting — it would hallucinate extra levels or
+  collapse hierarchies. Flattening to a single-level schema with string-encoded lists dramatically improved generation
+  quality and made the correction loop simpler to implement.
+</Callout>
+
+<Callout type="info">
+  **Judge calibration strategy.** A judge that approves everything is worthless. I iterated through four prompt
+  versions, progressively adding specificity: field-level validation rules, cross-field consistency checks, and
+  domain-specific plausibility criteria. The 20% failure rate wasn't arbitrary — it matched my manual review of a
+  held-out sample.
+</Callout>
+
+<Callout type="warning">
+  **Template improvement over record-level patching.** When the judge found systematic issues (e.g., all difficulty
+  ratings skewing "Easy"), I fixed the generation template rather than patching individual records. This is documented
+  across 4 ADRs in the repository — each capturing a specific failure pattern and the template change that resolved it.
+</Callout>
+
+## Deliverables
+
+The project ships with the complete pipeline: Pydantic schemas for record definition and validation, the generation module with Instructor integration, the LLM-as-Judge evaluation suite with calibrated prompts, the iterative correction loop, and a 6-page Streamlit dashboard. The README includes Mermaid architecture diagrams and reproduction instructions — clone, set your API key, and run.

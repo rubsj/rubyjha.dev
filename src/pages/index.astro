@@ -1,11 +1,22 @@
 ---
 import Layout from '~/layouts/PageLayout.astro';
 import Hero from '~/components/widgets/Hero.astro';
+import Features from '~/components/widgets/Features.astro';
+import BlogLatestPosts from '~/components/widgets/BlogLatestPosts.astro';
+import WidgetWrapper from '~/components/ui/WidgetWrapper.astro';
+import Headline from '~/components/ui/Headline.astro';
+import ProjectCard from '~/components/projects/ProjectCard.astro';
+
+import { findFeaturedProjects } from '~/utils/projects';
+import { findLatestPosts } from '~/utils/blog';
 
 const metadata = {
   title: 'Ruby Jha',
   ignoreTitleTemplate: true,
 };
+
+const featuredProjects = await findFeaturedProjects();
+const latestPosts = await findLatestPosts({ count: 3 });
 ---
 
 <Layout metadata={metadata}>
@@ -26,20 +37,75 @@ const metadata = {
     <Fragment slot="title">Ruby Jha</Fragment>
 
     <Fragment slot="subtitle">
-      <span class="block text-xl md:text-2xl font-semibold mb-2">
-        Engineering Manager · Generative AI · Cloud
-      </span>
+      <span class="block text-xl md:text-2xl font-semibold mb-2"> Engineering Manager · Generative AI · Cloud </span>
       I build AI systems and the teams that ship them.
     </Fragment>
   </Hero>
+
+  <!-- Featured Projects -->
+  <WidgetWrapper>
+    <Headline
+      title="Featured Projects"
+      subtitle="Highlights from 9 production-grade AI systems"
+      classes={{ container: 'mb-10' }}
+    />
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+      {featuredProjects.map((project) => <ProjectCard project={project} />)}
+    </div>
+    <div class="mt-8 text-center">
+      <a
+        href="/projects"
+        class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+      >
+        View all projects →
+      </a>
+    </div>
+  </WidgetWrapper>
+
+  <!-- Tech Stack -->
+  <Features
+    title="Tech Stack"
+    subtitle="Languages, frameworks, and tools I work with daily"
+    columns={4}
+    items={[
+      { title: 'Python', icon: 'tabler:brand-python' },
+      { title: 'Java', icon: 'tabler:coffee' },
+      { title: 'TypeScript', icon: 'tabler:brand-typescript' },
+      { title: 'OpenAI API', icon: 'tabler:brain' },
+      { title: 'LangChain', icon: 'tabler:link' },
+      { title: 'CrewAI', icon: 'tabler:users-group' },
+      { title: 'FastAPI', icon: 'tabler:bolt' },
+      { title: 'ChromaDB', icon: 'tabler:database' },
+      { title: 'Docker', icon: 'tabler:brand-docker' },
+      { title: 'Kubernetes', icon: 'tabler:topology-star' },
+      { title: 'React', icon: 'tabler:brand-react' },
+      { title: 'Spring Boot', icon: 'tabler:leaf' },
+      { title: 'Astro', icon: 'tabler:rocket' },
+    ]}
+  />
+
+  <!-- Latest Blog Posts -->
+  {
+    latestPosts.length > 0 ? (
+      <BlogLatestPosts
+        title="Latest Blog Posts"
+        information="Thoughts on AI engineering, architecture decisions, and lessons learned."
+        count={3}
+      />
+    ) : (
+      <WidgetWrapper>
+        <Headline title="Latest Blog Posts" subtitle="Coming soon — technical deep-dives on each project." />
+      </WidgetWrapper>
+    )
+  }
 
   <!-- About Blurb -->
   <section class="py-12 px-4 sm:px-6">
     <div class="max-w-3xl mx-auto text-center">
       <p class="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
-        20+ years of engineering leadership in Financial Services and Healthcare. Now building 9
-        production-grade AI systems — RAG pipelines, multi-agent orchestration, LLM fine-tuning — while
-        leading engineering teams at State Street.
+        20+ years of engineering leadership in Financial Services and Healthcare. Now building 9 production-grade AI
+        systems — RAG pipelines, multi-agent orchestration, LLM fine-tuning — while leading engineering teams at State
+        Street.
       </p>
       <div class="mt-6">
         <a

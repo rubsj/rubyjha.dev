@@ -1,0 +1,109 @@
+---
+title: 'RAG Evaluation Pipeline'
+description: 'Systematic RAG evaluation comparing 15 vector configurations across chunking strategies, embedding models, and reranking. Best config achieved Recall@5 of 0.747, beating BM25 baseline by 96%.'
+projectNumber: 2
+status: 'completed'
+tags: ['rag', 'embeddings', 'llm-evaluation', 'vector-databases']
+techStack:
+  ['Python', 'LangChain', 'RAGAS', 'Sentence-Transformers', 'Braintrust', 'FAISS', 'Cohere', 'OpenAI', 'Click CLI']
+githubUrl: 'https://github.com/rubsj/ai-portfolio/tree/main/02-rag-evaluation'
+demoType: 'streamlit'
+keyMetrics:
+  - label: 'Best Recall@5'
+    value: '0.747'
+  - label: 'vs BM25 Baseline'
+    value: '+96%'
+  - label: 'Test Coverage'
+    value: '95%'
+  - label: 'Total Hours'
+    value: '19'
+featured: true
+publishDate: 2026-02-17
+---
+
+import Callout from '~/components/mdx/Callout.astro';
+import MetricCard from '~/components/mdx/MetricCard.astro';
+import MetricsGrid from '~/components/mdx/MetricsGrid.astro';
+import MermaidDiagram from '~/components/mdx/MermaidDiagram.astro';
+
+## The Problem
+
+RAG systems fail silently. You build a retrieval pipeline, plug it into a chat interface, and the answers look reasonable — until they don't. Without a systematic evaluation framework, you can't measure retrieval quality, compare configurations, or know if that new embedding model actually improved anything. Most teams ship RAG pipelines with zero evaluation beyond "it seems to work."
+
+I built a multi-strategy evaluation pipeline to answer concrete questions: Does semantic chunking outperform fixed-size? Are OpenAI embeddings worth the API cost over local models? Does reranking actually help, or does it just add latency? I tested 15 vector configurations across every combination of chunking strategy, embedding model, and reranking — and tracked every result in Braintrust for reproducibility.
+
+## Architecture
+
+<MermaidDiagram
+  chart={`graph TD
+  A[Document Corpus] --> B[Chunking Strategies]
+  B --> C[Fixed-Size Chunking]
+  B --> D[Semantic Chunking]
+  C --> E[Embedding Models]
+  D --> E
+  E --> F[OpenAI Embeddings]
+  E --> G[Local Sentence-Transformers]
+  F --> H[FAISS Vector Store]
+  G --> H
+  H --> I[Retrieval]
+  I --> J[Cohere Reranker]
+  J --> K[RAGAS Evaluation]
+  K --> L[Recall@5 / Faithfulness / Relevancy]
+  L --> M[Braintrust Tracking]`}
+/>
+
+The pipeline processes a document corpus through two chunking strategies (fixed-size with configurable overlap, and semantic chunking using sentence-transformers), embeds with either OpenAI's API or local sentence-transformer models, stores in FAISS, retrieves with optional Cohere reranking, and evaluates using RAGAS metrics. Every configuration gets the same test questions, and every result lands in Braintrust for side-by-side comparison.
+
+The CLI is built with Click, giving you a clean interface for running individual configurations or the full grid search. Each run produces structured evaluation results that feed into the Streamlit dashboard.
+
+## Key Results
+
+<MetricsGrid>
+  <MetricCard label="Best Recall@5" value="0.747" />
+  <MetricCard label="vs BM25 Baseline" value="+96%" />
+  <MetricCard label="Configs Tested" value="15" />
+  <MetricCard label="Test Coverage" value="95%" />
+  <MetricCard label="Tests Written" value="384+" />
+  <MetricCard label="Total Hours" value="19" />
+</MetricsGrid>
+
+The best configuration — semantic chunking with OpenAI embeddings ("E-openai") — achieved Recall@5 of 0.625 without reranking, jumping to 0.747 with Cohere reranking (+19.5%). The BM25 keyword baseline managed only 0.381, which 10 out of 15 vector configurations beat decisively.
+
+The data told a clear story across every axis. Semantic chunking outperformed fixed-size chunking by 3-22% across all embedding models — not a marginal improvement, but a consistent one. Counter-intuitively, 50% chunk overlap underperformed 25% overlap by 13%; more overlap doesn't mean better retrieval. OpenAI embeddings beat the best local sentence-transformer model by 26%, and at $0.02 per million tokens, the cost-quality tradeoff isn't even close for most use cases.
+
+The most sobering finding was the faithfulness gap. The best retrieval configuration scored 0.747 on Recall@5 but only 0.511 on faithfulness — meaning the LLM frequently generated answers that weren't grounded in the retrieved context. Good retrieval is necessary but not sufficient for good RAG.
+
+The project includes 384+ tests at 95% coverage, 12 analytical charts, a 7-page Streamlit dashboard, and 5 Architecture Decision Records documenting every major design choice.
+
+## Key Decisions
+
+<Callout type="tip">
+  **FAISS over ChromaDB.** For a corpus under 1,000 vectors, FAISS brute-force search gives you exact nearest-neighbor
+  results with zero configuration. ChromaDB adds a server dependency, approximate search (unnecessary at this scale),
+  and setup complexity. Brute-force is the correct choice when your dataset fits in memory — and for evaluation
+  purposes, exact results eliminate a variable.
+</Callout>
+
+<Callout type="info">
+  **Semantic chunking validated by grid search.** I didn't assume semantic chunking would win — I tested it head-to-head
+  against fixed-size chunking across every embedding model. The 3-22% improvement was consistent enough to declare it
+  the default strategy. The grid search approach is the point: don't guess at configurations, measure them.
+</Callout>
+
+<Callout type="info">
+  **OpenAI embeddings win on cost-quality tradeoff.** At $0.02 per million tokens, OpenAI's text-embedding-3-small beats
+  local sentence-transformer models by 26% on retrieval quality. The local models have zero marginal cost, but unless
+  you're processing millions of documents, the API cost is negligible compared to the quality gap.
+</Callout>
+
+<Callout type="tip">
+  **Cohere reranking as second-stage improvement.** Reranking improved the best configuration's Recall@5 by 19.5% (0.625
+  → 0.747). It's a cheap second pass that re-scores retrieved chunks using a cross-encoder — more expensive per query
+  than embedding similarity, but applied only to the top-k results rather than the full corpus.
+</Callout>
+
+## What I Learned
+
+The biggest takeaway is that retrieval quality does not guarantee generation quality. That 0.511 faithfulness score means the LLM hallucinated or went off-context almost half the time, even when the retriever found the right chunks. This gap is where most RAG failures hide — and it's invisible without evaluation.
+
+The evaluation framework itself turned out to be as valuable as the RAG pipeline. Once you can measure Recall@5 across configurations, you can make data-driven decisions about chunking, embeddings, and reranking instead of relying on blog-post wisdom. Every RAG project should start with evaluation, not end with it.

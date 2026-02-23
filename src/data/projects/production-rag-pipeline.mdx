@@ -1,0 +1,15 @@
+---
+title: 'Production RAG Pipeline'
+description: 'Production-grade RAG pipeline with multi-strategy chunking, hybrid search, Cohere reranking, and FastAPI endpoints. Designed for real-world deployment.'
+projectNumber: 5
+status: 'planned'
+tags: ['rag', 'fastapi', 'vector-databases']
+techStack: ['Python', 'LangChain', 'ChromaDB', 'FastAPI', 'Cohere', 'Sentence-Transformers']
+demoType: 'none'
+featured: true
+publishDate: 2026-02-22
+---
+
+Building on the evaluation findings from P2, this project implements a production-ready RAG pipeline designed for real deployment. Where P2 was about measurement, P5 is about shipping: a FastAPI service with proper error handling, request validation, async retrieval, and structured logging. The pipeline uses hybrid search (dense + sparse) with Cohere reranking, the configuration that the P2 evaluation identified as optimal.
+
+The architecture includes a document ingestion service, an embedding pipeline with configurable chunking strategies, a ChromaDB vector store with persistence, and a retrieval API that returns ranked results with confidence scores. Everything is containerized with Docker for reproducible deployment. The focus is on the operational concerns that tutorials skip: latency budgets, memory footprint, graceful degradation when the vector store is unavailable, and monitoring hooks for production observability.

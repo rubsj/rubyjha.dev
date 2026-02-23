@@ -1,0 +1,15 @@
+---
+title: 'Feedback Intelligence Agent'
+description: 'Multi-agent system using CrewAI for analyzing customer feedback at scale — specialized agents for categorization, sentiment analysis, and actionable insights.'
+projectNumber: 6
+status: 'planned'
+tags: ['multi-agent', 'crewai']
+techStack: ['Python', 'CrewAI', 'OpenAI', 'LangChain']
+demoType: 'none'
+featured: false
+publishDate: 2026-02-22
+---
+
+Customer feedback is high-signal and chronically underanalyzed. This project builds a multi-agent CrewAI system where specialized agents handle distinct stages of the analysis pipeline: a categorization agent that routes feedback to product, UX, performance, or support buckets; a sentiment agent that distinguishes frustration intensity from feature requests; and a synthesis agent that produces prioritized action items grouped by theme and impact.
+
+The multi-agent approach is deliberate — each agent operates with a narrow, well-defined prompt that reduces hallucination compared to a single general-purpose agent processing raw feedback. The system is designed to handle batches of 100+ feedback items and produce structured JSON output suitable for feeding into product planning tools.

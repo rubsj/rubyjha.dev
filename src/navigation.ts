@@ -12,9 +12,7 @@ export const headerData = {
 
 export const footerData = {
   links: [],
-  secondaryLinks: [
-    { text: 'Privacy Policy', href: getPermalink('/privacy') },
-  ],
+  secondaryLinks: [{ text: 'Privacy Policy', href: getPermalink('/privacy') }],
   socialLinks: [
     { ariaLabel: 'LinkedIn', icon: 'tabler:brand-linkedin', href: 'https://linkedin.com/in/jharuby' },
     { ariaLabel: 'GitHub', icon: 'tabler:brand-github', href: 'https://github.com/rubsj' },
