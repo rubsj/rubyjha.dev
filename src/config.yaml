@@ -1,6 +1,6 @@
 site:
   name: "Ruby Jha"
-  site: 'https://astrowind.vercel.app'
+  site: 'https://rubyjha.dev'
   base: '/'
   trailingSlash: false
 
@@ -9,9 +9,9 @@ site:
 # Default SEO metadata
 metadata:
   title:
-    default: AstroWind
-    template: '%s — AstroWind'
-  description: "\U0001F680 Suitable for Startups, Small Business, Sass Websites, Professional Portfolios, Marketing Websites, Landing Pages & Blogs."
+    default: Ruby Jha
+    template: '%s — Ruby Jha'
+  description: "Engineering Manager and AI Systems Builder. 20+ years of enterprise experience in Financial Services and Healthcare. Building production-grade AI systems spanning RAG, fine-tuning, and multi-agent orchestration."
   robots:
     index: true
     follow: true
