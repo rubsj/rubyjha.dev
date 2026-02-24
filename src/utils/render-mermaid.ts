@@ -95,6 +95,18 @@ async function init(): Promise<void> {
     proto = Object.getPrototypeOf(proto);
   }
 
+  // 3. Also walk the foreignObject prototype chain. Mermaid v11 uses
+  //    <foreignObject> HTML labels by default even when htmlLabels: false is
+  //    passed to initialize() — the per-render %%init%% directive (below) is
+  //    the primary fix, but patching foreignObject too guards against any path
+  //    where mermaid still creates foreignObject elements.
+  const testFoEl = w.document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+  let foProto: object | null = Object.getPrototypeOf(testFoEl);
+  while (foProto !== null && foProto !== Object.prototype) {
+    forcePatch(foProto);
+    foProto = Object.getPrototypeOf(foProto);
+  }
+
   // Dynamic import *after* globals are set so mermaid sees the DOM immediately.
   const mod = await import('mermaid');
   mermaidInstance = mod.default;
@@ -104,15 +116,61 @@ async function init(): Promise<void> {
     // 'neutral' theme renders well on both light and dark backgrounds.
     theme: 'neutral',
     securityLevel: 'loose',
+    // htmlLabels must be false at BOTH the root level and flowchart level.
+    // mermaid's labelHelper() reads getConfig().htmlLabels (root) while
+    // insertLabel() reads getConfig().flowchart.htmlLabels — setting only
+    // one leaves the other path defaulting to true, causing <foreignObject>
+    // elements whose getBBox() returns zero height in any headless DOM.
+    htmlLabels: false,
     flowchart: {
       useMaxWidth: true,
-      // Plain SVG text avoids <foreignObject> / HTML inside SVG,
-      // which virtual DOMs don't fully support.
       htmlLabels: false,
     },
   });
 
   initialized = true;
+}
+
+/**
+ * mermaid's setupGraphViewbox() calls getBBox() on the root <svg> element to
+ * set the viewBox.  In happy-dom, our polyfill estimates from textContent —
+ * all label text concatenated on one line — so the viewBox becomes extremely
+ * wide and only ~36 px tall.  The node translate() positions dagre computed
+ * are correct, so we can reconstruct the viewBox from those coordinates.
+ */
+function fixViewBox(svg: string): string {
+  const translateRe = /transform="translate\((-?[\d.]+),\s*(-?[\d.]+)\)"/g;
+  let minX = Infinity,
+    maxX = -Infinity,
+    minY = Infinity,
+    maxY = -Infinity;
+  let m: RegExpExecArray | null;
+  while ((m = translateRe.exec(svg)) !== null) {
+    const x = parseFloat(m[1]);
+    const y = parseFloat(m[2]);
+    if (isNaN(x) || isNaN(y)) continue;
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  }
+  if (!isFinite(minX)) return svg;
+
+  // HALF_W: half of the widest possible node (generous — "Recall@5 /
+  // Faithfulness / Relevancy" is ~36 chars × 8 px + mermaid padding).
+  // HALF_H: half of node height (text 20 px + mermaid's vertical padding).
+  const HALF_W = 200;
+  const HALF_H = 30;
+  const MARGIN = 8;
+
+  const vbX = Math.floor(minX - HALF_W - MARGIN);
+  const vbY = Math.floor(minY - HALF_H - MARGIN);
+  const vbW = Math.ceil(maxX - minX + HALF_W * 2 + MARGIN * 2);
+  const vbH = Math.ceil(maxY - minY + HALF_H * 2 + MARGIN * 2);
+
+  return svg
+    .replace(/viewBox="[^"]*"/, `viewBox="${vbX} ${vbY} ${vbW} ${vbH}"`)
+    .replace(/style="max-width:[^"]*"/, `style="max-width:${vbW}px"`);
 }
 
 /**
@@ -125,6 +183,7 @@ export async function renderMermaidToSvg(chart: string): Promise<string> {
   const id = `mermaid-ssr-${Math.random().toString(36).slice(2, 9)}`;
   const { svg } = await mermaidInstance!.render(id, chart);
 
-  // Ensure the SVG fills its container width rather than using a fixed pixel value.
-  return svg.replace(/(<svg\b[^>]*)\bwidth="[^"]*"/, '$1width="100%"');
+  // Fix the viewBox (broken by getBBox on root SVG in headless DOM), then
+  // ensure the SVG fills its container width rather than a fixed pixel value.
+  return fixViewBox(svg).replace(/(<svg\b[^>]*)\bwidth="[^"]*"/, '$1width="100%"');
 }
