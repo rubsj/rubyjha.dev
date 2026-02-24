@@ -87,5 +87,11 @@ export default defineConfig({
         '~': path.resolve(__dirname, './src'),
       },
     },
+    ssr: {
+      // mermaid is ESM-only and browser-oriented; bundle it into the SSR
+      // build so Vite can resolve its sub-paths inside Node.js.
+      // happy-dom is also pure ESM and needs no special treatment.
+      noExternal: ['mermaid'],
+    },
   },
 });
