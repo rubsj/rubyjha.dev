@@ -1,14 +1,19 @@
 /**
- * Build-time Mermaid renderer using jsdom as a headless DOM.
+ * Build-time Mermaid renderer using happy-dom as a headless DOM.
  * Called from MermaidDiagram.astro frontmatter so diagrams are static SVG
  * in the final HTML — zero client JavaScript.
  *
+ * Why happy-dom instead of jsdom: happy-dom is pure ESM so it works on any
+ * Node.js version without CJS/ESM interop issues. jsdom@28+ has a transitive
+ * dep (html-encoding-sniffer) that uses CJS require() to load an ESM-only
+ * package (@exodus/bytes), which crashes on Node.js < 22.12 in CI.
+ *
  * Why dynamic imports: mermaid reads `document`/`window` at module-evaluation
- * time, so we must set those globals *before* the first `import('mermaid')`.
+ * time, so globals must be set *before* the first `import('mermaid')`.
  * A top-level static import would be hoisted ahead of the polyfill setup.
  */
 
-import { JSDOM } from 'jsdom';
+import { Window } from 'happy-dom';
 
 let initialized = false;
 let mermaidInstance: (typeof import('mermaid'))['default'] | null = null;
@@ -17,8 +22,7 @@ async function init(): Promise<void> {
   if (initialized) return;
 
   // Provide a minimal DOM so mermaid / d3 can build SVG nodes.
-  const dom = new JSDOM('<!DOCTYPE html><html><head></head><body></body></html>');
-  const { window: w } = dom;
+  const w = new Window();
 
   // Use Object.defineProperty so we can override properties that Astro's SSR
   // runtime already defines as read-only getters (e.g. navigator).
@@ -40,24 +44,56 @@ async function init(): Promise<void> {
   // d3 and mermaid check for SVGElement to detect browser environment
   setGlobal('SVGElement', w.SVGElement);
 
-  // jsdom has no layout engine, so SVGElement.getBBox() and
-  // SVGTextElement.getComputedTextLength() are not implemented.
-  // Polyfill them with text-length estimates so mermaid can size nodes.
-  // (~8 px per character at a typical 14 px monospace label font.)
+  // happy-dom (like jsdom) has no layout engine, so SVGElement.getBBox() /
+  // getComputedTextLength() return zeros by default.  Mermaid uses these to
+  // size nodes; zero values cause dagre to collapse nodes to the same point,
+  // making edge paths degenerate — positionEdgeLabel then throws.
+  //
+  // happy-dom defines getBBox as a non-writable property, so a plain
+  //   prototype.getBBox = fn
+  // assignment is silently ignored.  We must use Object.defineProperty AND
+  // walk the *actual* element prototype chain (not just w.SVGElement) because
+  // happy-dom's internal class hierarchy may differ from the exposed window
+  // properties.
   const PX_PER_CHAR = 8;
   const LINE_HEIGHT = 20;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (w.SVGElement as any).prototype.getBBox = function (this: Element) {
+  const getBBoxImpl = function (this: Element) {
     const lines = (this.textContent ?? '').split('\n');
     const maxLen = Math.max(...lines.map((l: string) => l.length), 1);
     return { x: 0, y: 0, width: maxLen * PX_PER_CHAR, height: LINE_HEIGHT * lines.length };
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (w.SVGElement as any).prototype.getComputedTextLength = function (this: Element) {
+  const getComputedTextLengthImpl = function (this: Element) {
     return (this.textContent ?? '').length * PX_PER_CHAR;
   };
+
+  function forcePatch(proto: object) {
+    for (const [key, value] of [
+      ['getBBox', getBBoxImpl],
+      ['getComputedTextLength', getComputedTextLengthImpl],
+    ] as const) {
+      try {
+        Object.defineProperty(proto, key, { value, writable: true, configurable: true });
+      } catch {
+        /* non-configurable in this environment — skip */
+      }
+    }
+  }
+
+  // 1. Patch via the window-exposed SVGElement prototype (works with jsdom).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  forcePatch((w.SVGElement as any).prototype);
+
+  // 2. Walk the actual prototype chain of a freshly created SVG text element.
+  //    This handles happy-dom whose internal class may not share the same
+  //    prototype object as w.SVGElement.
+  const testTextEl = w.document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  let proto: object | null = Object.getPrototypeOf(testTextEl);
+  while (proto !== null && proto !== Object.prototype) {
+    forcePatch(proto);
+    proto = Object.getPrototypeOf(proto);
+  }
 
   // Dynamic import *after* globals are set so mermaid sees the DOM immediately.
   const mod = await import('mermaid');
@@ -71,7 +107,7 @@ async function init(): Promise<void> {
     flowchart: {
       useMaxWidth: true,
       // Plain SVG text avoids <foreignObject> / HTML inside SVG,
-      // which jsdom doesn't fully support.
+      // which virtual DOMs don't fully support.
       htmlLabels: false,
     },
   });

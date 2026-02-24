@@ -88,11 +88,9 @@ export default defineConfig({
       },
     },
     ssr: {
-      // jsdom is a native Node.js package — keep it external so Vite doesn't
-      // try to bundle it for the SSR build context.
-      external: ['jsdom'],
       // mermaid is ESM-only and browser-oriented; bundle it into the SSR
       // build so Vite can resolve its sub-paths inside Node.js.
+      // happy-dom is also pure ESM and needs no special treatment.
       noExternal: ['mermaid'],
     },
   },
