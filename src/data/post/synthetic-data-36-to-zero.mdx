@@ -38,13 +38,13 @@ Most synthetic data tutorials follow a straight line: generate → validate → 
 
 <MermaidDiagram
   chart={`flowchart TD
-    T[Templates v1 & v2] --> G[Generator\nGPT-4o-mini + Instructor]
-    G --> V[Validator\nPydantic v2]
-    V --> E[Evaluator\nGPT-4o Judge]
-    E --> A[Failure Analysis\nPandas + Seaborn]
-    A -->|failure patterns| C[Corrector]
-    C -->|improved templates| T
-    C -->|fixed records| E`}
+    T["Templates (v1 & v2)"] --> G["Generator (GPT-4o-mini)"]
+    G --> V["Validator (Pydantic v2)"]
+    V --> E["Evaluator (GPT-4o Judge)"]
+    E --> A["Failure Analysis"]
+    A -- failure patterns --> C["Corrector"]
+    C -- improved templates --> T
+    C -- fixed records --> E`}
 />
 
 The execution flow: Generate 30 records using category-specific prompt templates → Validate schemas with Pydantic v2 → Evaluate quality with a GPT-4o judge across 6 failure modes → Analyze failure patterns → Improve templates → Re-generate → Correct remaining failures → Re-evaluate.
