@@ -14,6 +14,9 @@ import PersonJsonLd from '~/components/common/PersonJsonLd.astro';
 const metadata = {
   title: 'Ruby Jha',
   ignoreTitleTemplate: true,
+  openGraph: {
+    images: [{ url: new URL('/og/home.png', Astro.site).toString(), width: 1200, height: 630 }],
+  },
 };
 
 const featuredProjects = await findFeaturedProjects();

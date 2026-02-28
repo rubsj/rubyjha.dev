@@ -82,6 +82,16 @@ export const adaptOpenGraphImages = async (
           isUnpicCompatible(resolvedImage)
         ) {
           _image = (await unpicOptimizer(resolvedImage, [defaultWidth], defaultWidth, defaultHeight, 'jpg'))[0];
+        } else if (
+          typeof resolvedImage === 'string' &&
+          (resolvedImage.startsWith('http://') || resolvedImage.startsWith('https://'))
+        ) {
+          // Non-CDN absolute URL (e.g. generated OG images) — pass through as-is
+          return {
+            url: resolvedImage,
+            width: image.width ?? defaultWidth,
+            height: image.height ?? defaultHeight,
+          };
         } else if (resolvedImage) {
           const dimensions =
             typeof resolvedImage !== 'string' && resolvedImage?.width <= defaultWidth
