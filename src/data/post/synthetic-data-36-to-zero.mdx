@@ -37,11 +37,11 @@ The headline result: 36 evaluation failures became 0 through a closed-loop syste
 Most synthetic data tutorials follow a straight line: generate → validate → done. My pipeline is a loop.
 
 <MermaidDiagram
-  chart={`flowchart LR
-    T["Templates\nv1 & v2"] --> G["Generator\nGPT-4o-mini + Instructor"]
-    G --> V["Validator\nPydantic v2"]
-    V --> E["Evaluator\nGPT-4o Judge"]
-    E --> A["Failure Analysis\nPandas + Seaborn"]
+  chart={`flowchart TD
+    T[Templates v1 & v2] --> G[Generator\nGPT-4o-mini + Instructor]
+    G --> V[Validator\nPydantic v2]
+    V --> E[Evaluator\nGPT-4o Judge]
+    E --> A[Failure Analysis\nPandas + Seaborn]
     A -->|failure patterns| C[Corrector]
     C -->|improved templates| T
     C -->|fixed records| E`}
