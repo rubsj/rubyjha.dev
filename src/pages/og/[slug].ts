@@ -11,7 +11,8 @@ const pages: Record<string, { title: string; description: string }> = {
   },
   projects: {
     title: 'Projects — Ruby Jha',
-    description: '9 production-grade AI systems spanning synthetic data, RAG, fine-tuning, and multi-agent orchestration.',
+    description:
+      '9 production-grade AI systems spanning synthetic data, RAG, fine-tuning, and multi-agent orchestration.',
   },
   blog: {
     title: 'Blog — Ruby Jha',
