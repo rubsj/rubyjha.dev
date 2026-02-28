@@ -21,9 +21,14 @@ interface Props {
 
 const { project } = Astro.props;
 
+const ogImageUrl = new URL(`/og/projects/${project.slug}.png`, Astro.site).toString();
+
 const metadata = {
   title: project.title,
   description: project.description,
+  openGraph: {
+    images: [{ url: ogImageUrl, width: 1200, height: 630 }],
+  },
 };
 ---
 

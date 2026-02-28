@@ -10,6 +10,9 @@ const metadata = {
   title: 'Projects',
   description:
     '9 production-grade AI systems spanning synthetic data, RAG evaluation, LLM fine-tuning, and multi-agent orchestration.',
+  openGraph: {
+    images: [{ url: new URL('/og/projects.png', Astro.site).toString(), width: 1200, height: 630 }],
+  },
 };
 
 const projects = await fetchProjects();
