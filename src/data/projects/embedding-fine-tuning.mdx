@@ -14,9 +14,9 @@ keyMetrics:
     value: '0.32%'
   - label: 'Model Size Reduction'
     value: '309x'
-  - label: 'Total Hours'
-    value: '12'
-featured: false
+  - label: 'Spearman Improvement'
+    value: '−0.22 → +0.85'
+featured: true
 publishDate: 2026-02-20
 ---
 
@@ -57,19 +57,19 @@ The evaluation suite measures three complementary metrics: Spearman correlation 
 ## Key Results
 
 <MetricsGrid>
+  <MetricCard label="Spearman" value="−0.22 → +0.85" />
   <MetricCard label="LoRA vs Standard" value="96.9%" />
   <MetricCard label="Trainable Params" value="0.32%" />
   <MetricCard label="Model Size Reduction" value="309x" />
   <MetricCard label="Training Speed" value="43% faster" />
-  <MetricCard label="Test Coverage" value="94%" />
-  <MetricCard label="Total Hours" value="12" />
+  <MetricCard label="Tests" value="112 (100% pass)" />
 </MetricsGrid>
 
-The baseline model was actively wrong — Spearman correlation of -0.219, AUC-ROC of 0.185, and a negative Cohen's d of -0.419. The similarity margin between positive and negative pairs was -0.083, meaning the model rated dissimilar sentences as _more_ similar than similar ones. It wasn't just bad; it was inverted.
+The baseline model was actively wrong — Spearman correlation of -0.219, AUC-ROC of 0.373, and a negative Cohen's d of -0.419. The similarity margin between positive and negative pairs was -0.083, meaning the model rated dissimilar sentences as _more_ similar than similar ones. It wasn't just bad; it was inverted.
 
-Standard fine-tuning fixed everything: Spearman jumped to 0.853, AUC-ROC to 0.954, and Cohen's d to 2.5. The similarity margin flipped from -0.083 to +0.903. These are production-grade numbers.
+Standard fine-tuning fixed everything: Spearman jumped to 0.853, AUC-ROC to 0.994, and Cohen's d to 7.727. The similarity margin flipped from -0.083 to +0.940. False positives dropped from 137 to 3 — a 97.8% reduction. These are production-grade numbers.
 
-LoRA achieved 96.9% of standard's performance across all metrics — with only 0.32% trainable parameters (73K vs 22.7M). The LoRA adapter is 0.28 MB compared to the full model's 86.65 MB — a 309x reduction in model size. Training completed in 35 seconds on an M2 MacBook Pro versus 61 seconds for standard (43% faster). The project includes 124 tests at 94% coverage, 8 comparison charts, and an interactive HTML report.
+LoRA achieved 96.9% of standard's performance across all metrics — with only 0.32% trainable parameters (73K vs 22.7M). The LoRA adapter is 0.28 MB compared to the full model's 86.65 MB — a 309x reduction in model size. Training completed in 35 seconds on an M2 MacBook Pro versus 61 seconds for standard (43% faster). The project includes 112 tests at 100% pass rate, 8 comparison charts, and an interactive HTML report.
 
 ## Key Decisions
 
@@ -103,3 +103,11 @@ LoRA achieved 96.9% of standard's performance across all metrics — with only 0
 </Callout>
 
 This was the most valuable lesson from the project. If I'd only run LoRA with the default learning rate, I would have concluded that LoRA doesn't work for sentence transformer fine-tuning — a completely wrong conclusion caused by a single hyperparameter.
+
+<Callout type="warning">
+  **Adapter merge is a silent failure mode.** LoRA achieved Spearman 0.827 during training, but post-training evaluation
+  produced baseline-identical metrics due to an adapter merge issue during inference. The `PeftModel.from_pretrained` +
+  `merge_and_unload` path didn't correctly merge adapter weights before encoding. The model runs without errors but
+  produces unmodified embeddings — a real production risk with LoRA deployments that's invisible without comprehensive
+  evaluation metrics.
+</Callout>

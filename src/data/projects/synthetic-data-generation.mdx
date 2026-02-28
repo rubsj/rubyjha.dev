@@ -10,13 +10,13 @@ demoType: 'streamlit'
 keyMetrics:
   - label: 'Generation Success'
     value: '100%'
-  - label: 'Judge Calibration'
-    value: '20% failure rate'
+  - label: 'Inter-rater Agreement'
+    value: '81.7%'
   - label: 'Correction Improvement'
     value: '78% reduction'
-  - label: 'Total Hours'
-    value: '14'
-featured: false
+  - label: 'Failure Reduction'
+    value: '36 → 0'
+featured: true
 publishDate: 2026-02-15
 ---
 
@@ -55,18 +55,18 @@ I used the Instructor library to extract structured outputs from both models. Th
 
 <MetricsGrid>
   <MetricCard label="Generation Success" value="100%" />
-  <MetricCard label="Judge Calibration" value="20% failure rate" />
+  <MetricCard label="Failures" value="36 → 0" />
+  <MetricCard label="Inter-rater Agreement" value="81.7%" />
   <MetricCard label="Correction Improvement" value="78% reduction" />
   <MetricCard label="Records Generated" value="30" />
-  <MetricCard label="Streamlit Pages" value="6" />
   <MetricCard label="Analytical Charts" value="7" />
 </MetricsGrid>
 
-The generation pipeline achieved a 100% success rate across all 30 records — every record passed Pydantic schema validation on the first attempt. The more interesting story is the judge calibration. My first judge prompt approved everything — a 0% failure rate that meant the judge was useless. After four rounds of prompt refinement, I calibrated it to a 20% failure rate, which matched my manual assessment of record quality.
+The generation pipeline achieved a 100% success rate across all 30 records — every record passed Pydantic schema validation on the first attempt. The more interesting story is the judge calibration. My first judge prompt approved everything — a 0% failure rate that meant the judge was useless. After four rounds of prompt refinement, I calibrated it to a 20% failure rate, which matched my manual assessment of record quality. Dual labeling (LLM judge vs human labels) achieved 81.7% inter-rater agreement, proving the judge was reliable enough to automate.
 
-The correction loop proved its value in hard numbers: V1 evaluation flagged 36 failures across the dataset. After running corrections on the 12 worst records, V2 dropped to just 8 failures — a 78% reduction. The corrected records weren't just patched; they were regenerated with specific guidance from the judge's feedback.
+The correction loop tells a clear three-stage story: V1 templates produced 36 failures across 180 evaluations (20% failure rate). Failure pattern analysis revealed `incomplete_answer` (50%) and `poor_quality_tips` (43%) as the dominant modes. Improved V2 templates cut failures to 8 — a 78% reduction. Targeted correction of the remaining 8 brought the total to zero. The fix was upstream (better templates), not downstream (patching individual records) — this is documented across 4 ADRs in the repository.
 
-The 6-page Streamlit dashboard includes a Story Mode that walks through the entire pipeline narrative, plus analytics pages with Jaccard similarity analysis and correlation heatmaps across 7 charts.
+The Streamlit dashboard includes a Story Mode that walks through the entire pipeline narrative, plus analytics pages with Jaccard similarity analysis and correlation heatmaps across 7 charts.
 
 ## Key Decisions
 
