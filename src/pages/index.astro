@@ -1,7 +1,6 @@
 ---
 import Layout from '~/layouts/PageLayout.astro';
 import Hero from '~/components/widgets/Hero.astro';
-import Features from '~/components/widgets/Features.astro';
 import BlogLatestPosts from '~/components/widgets/BlogLatestPosts.astro';
 import WidgetWrapper from '~/components/ui/WidgetWrapper.astro';
 import Headline from '~/components/ui/Headline.astro';
@@ -42,7 +41,7 @@ const latestPosts = await findLatestPosts({ count: 3 });
 
     <Fragment slot="subtitle">
       <span class="block text-xl md:text-2xl font-semibold mb-2"> Engineering Manager · Generative AI · Cloud </span>
-      I build AI systems and the teams that ship them.
+      The next decade belongs to engineering leaders who build with AI.
     </Fragment>
   </Hero>
 
@@ -52,72 +51,75 @@ const latestPosts = await findLatestPosts({ count: 3 });
   >
     <div class="max-w-[800px] mx-auto text-center leading-[1.7]">
       <p class="text-base sm:text-lg text-slate-700 dark:text-slate-300">
-        Not demos. Production-grade AI systems: RAG evaluation pipelines, contrastive embedding fine-tuning,
-        LLM-as-Judge validation, and FastAPI services backed by vector search. Every project has real metrics,
-        architecture decision records, and honest tradeoffs.
+        I spent the last two decades leading engineering teams at State Street, Centene, and EY — building platforms
+        that handle real money, real patient data, and real regulatory scrutiny. The kind of work where downtime means
+        someone's claim doesn't get processed and a bad deployment means financial loss.
       </p>
       <p class="mt-5 text-base sm:text-lg text-slate-700 dark:text-slate-300">
-        Before this, 20+ years building enterprise platforms and leading globally distributed engineering teams of up to
-        12 across US, India, and Poland. At State Street: $250K/month in operational savings, 40+ enterprise customers,
-        platform serving 7 global regions. At Centene: healthcare platform modernization covering 44M lives. At EY:
-        12-engineer cross-functional org with zero CMMI Level 3 audit findings.
-      </p>
-      <p class="mt-10 text-base sm:text-lg font-medium text-slate-800 dark:text-slate-200">
-        I build AI systems <em>and</em> the teams that ship them.
+        Now I'm applying that same engineering discipline to AI. I'm building 9 AI systems covering RAG pipelines,
+        embedding fine-tuning, and multi-agent orchestration. Each one has evaluation frameworks, architecture decision
+        records, and metrics I'd trust in a code review. The same standards I'd hold any production system to.
       </p>
     </div>
   </section>
 
-  <!-- Portfolio Stats Bar -->
-  <div
-    class="flex flex-wrap justify-center items-center gap-x-8 gap-y-3 py-5 px-4 border-b border-slate-200 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/50"
-  >
-    <span class="text-sm font-medium text-slate-600 dark:text-slate-400">
-      <span class="font-mono font-bold text-slate-900 dark:text-slate-100">4/9</span> Projects Complete
-    </span>
-    <span class="text-slate-300 dark:text-slate-600" aria-hidden="true">&middot;</span>
-    <span class="text-sm font-medium text-slate-600 dark:text-slate-400">
-      <span class="font-mono font-bold text-slate-900 dark:text-slate-100">1,100+</span> Tests
-    </span>
-    <span class="text-slate-300 dark:text-slate-600" aria-hidden="true">&middot;</span>
-    <span class="text-sm font-medium text-slate-600 dark:text-slate-400">
-      <span class="font-mono font-bold text-slate-900 dark:text-slate-100">17</span> ADRs
-    </span>
-    <span class="text-slate-300 dark:text-slate-600" aria-hidden="true">&middot;</span>
-    <span class="text-sm font-medium text-slate-600 dark:text-slate-400">
-      <span class="font-mono font-bold text-slate-900 dark:text-slate-100">95%+</span> Coverage
-    </span>
-  </div>
-
-  <!-- Tech Stack -->
-  <Features
-    title="Tech Stack"
-    subtitle="Languages, frameworks, and tools I work with daily"
-    columns={4}
-    items={[
-      { title: 'Python', icon: 'tabler:brand-python' },
-      { title: 'Java', icon: 'tabler:coffee' },
-      { title: 'TypeScript', icon: 'tabler:brand-typescript' },
-      { title: 'OpenAI API', icon: 'tabler:brain' },
-      { title: 'LangChain', icon: 'tabler:link' },
-      { title: 'CrewAI', icon: 'tabler:users-group' },
-      { title: 'FastAPI', icon: 'tabler:bolt' },
-      { title: 'ChromaDB', icon: 'tabler:database' },
-      { title: 'Docker', icon: 'tabler:brand-docker' },
-      { title: 'Kubernetes', icon: 'tabler:topology-star' },
-      { title: 'React', icon: 'tabler:brand-react' },
-      { title: 'Spring Boot', icon: 'tabler:leaf' },
-      { title: 'Astro', icon: 'tabler:rocket' },
-    ]}
-  />
+  <!-- The Full Stack -->
+  <section class="py-10 px-4 sm:px-6 bg-white dark:bg-slate-900">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-3xl font-bold text-center text-slate-900 dark:text-white mb-8">The Full Stack</h2>
+      <div class="mb-8">
+        <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-4">
+          Leadership
+        </p>
+        <div class="flex flex-wrap gap-2">
+          {
+            [
+              'People Management',
+              'Hiring & Team Building',
+              'Performance & Promotions',
+              'Executive Communication',
+              'Technical Strategy',
+            ].map((skill) => (
+              <span class="px-3 py-1.5 text-sm font-medium rounded-full border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800">
+                {skill}
+              </span>
+            ))
+          }
+        </div>
+      </div>
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-4">Technical</p>
+        <div class="flex flex-wrap gap-2">
+          {
+            [
+              'Python',
+              'Java',
+              'TypeScript',
+              'OpenAI API',
+              'LangChain',
+              'CrewAI',
+              'FastAPI',
+              'ChromaDB',
+              'Azure',
+              'Docker',
+              'Kubernetes',
+              'React',
+              'Spring Boot',
+              'Astro',
+            ].map((skill) => (
+              <span class="px-3 py-1.5 text-sm font-medium rounded-full border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/50">
+                {skill}
+              </span>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- Featured Projects -->
   <WidgetWrapper>
-    <Headline
-      title="Featured Projects"
-      subtitle="Highlights from 9 production-grade AI systems"
-      classes={{ container: 'mb-10' }}
-    />
+    <Headline title="Featured Projects" subtitle="What I'm building" classes={{ container: 'mb-10' }} />
     <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
       {featuredProjects.map((project) => <ProjectCard project={project} />)}
     </div>
@@ -149,13 +151,13 @@ const latestPosts = await findLatestPosts({ count: 3 });
   <!-- About CTA -->
   <section class="py-8 px-4 sm:px-6">
     <div class="max-w-3xl mx-auto text-center">
-      <p class="text-base text-slate-400 dark:text-slate-500">Want the full story?</p>
+      <p class="text-base text-slate-400 dark:text-slate-500">More about my background</p>
       <div class="mt-3">
         <a
           href="/about"
           class="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
         >
-          Read my About page →
+          About →
         </a>
       </div>
     </div>
