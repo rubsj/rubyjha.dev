@@ -1,0 +1,71 @@
+---
+import type { Post } from '~/types';
+import { getPermalink } from '~/utils/permalinks';
+import { APP_BLOG } from 'astrowind:config';
+
+export interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+
+const link = APP_BLOG?.post?.isEnabled ? getPermalink(post.permalink, 'post') : `/blog/${post.slug}/`;
+const ogImage = `/og/blog/${post.slug}.png`;
+
+const publishDate = post.publishDate.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+});
+
+const firstTag = post.tags?.[0]?.title ?? post.category ?? null;
+---
+
+<article
+  class="group relative flex flex-col rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 overflow-hidden"
+>
+  <a href={link} class="absolute inset-0 z-10" aria-label={post.title}></a>
+
+  <!-- OG image thumbnail -->
+  <div class="overflow-hidden">
+    <img
+      src={ogImage}
+      alt={post.title}
+      class="w-full aspect-video object-cover transition-transform duration-300 group-hover:scale-105"
+      loading="lazy"
+      decoding="async"
+      width="1200"
+      height="630"
+    />
+  </div>
+
+  <!-- Content -->
+  <div class="flex flex-col flex-1 p-5">
+    <!-- Meta row: tag + date -->
+    <div class="flex items-center justify-between mb-3">
+      {
+        firstTag && (
+          <span class="text-xs font-mono text-gray-400 dark:text-slate-500 uppercase tracking-wide">{firstTag}</span>
+        )
+      }
+      <span class="text-xs text-gray-400 dark:text-slate-500 ml-auto">{publishDate}</span>
+    </div>
+
+    <!-- Title -->
+    <h3
+      class="text-lg font-bold font-heading leading-tight text-slate-900 dark:text-white mb-2 group-hover:text-primary dark:group-hover:text-blue-400 transition-colors"
+    >
+      {post.title}
+    </h3>
+
+    <!-- Excerpt -->
+    {
+      post.excerpt && (
+        <p class="text-sm text-gray-600 dark:text-slate-400 leading-relaxed line-clamp-2 flex-1 mb-4">{post.excerpt}</p>
+      )
+    }
+
+    <!-- Footer: reading time -->
+    {post.readingTime && <p class="text-xs text-gray-400 dark:text-slate-500">{post.readingTime} min read</p>}
+  </div>
+</article>
