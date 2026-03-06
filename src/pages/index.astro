@@ -1,10 +1,10 @@
 ---
 import Layout from '~/layouts/PageLayout.astro';
 import Hero from '~/components/widgets/Hero.astro';
-import BlogLatestPosts from '~/components/widgets/BlogLatestPosts.astro';
 import WidgetWrapper from '~/components/ui/WidgetWrapper.astro';
 import Headline from '~/components/ui/Headline.astro';
 import ProjectCard from '~/components/projects/ProjectCard.astro';
+import BlogCard from '~/components/blog/BlogCard.astro';
 
 import { findFeaturedProjects } from '~/utils/projects';
 import { findLatestPosts } from '~/utils/blog';
@@ -134,19 +134,32 @@ const latestPosts = await findLatestPosts({ count: 3 });
   </WidgetWrapper>
 
   <!-- Latest Blog Posts -->
-  {
-    latestPosts.length > 0 ? (
-      <BlogLatestPosts
-        title="Latest Blog Posts"
-        information="Thoughts on AI engineering, architecture decisions, and lessons learned."
-        count={3}
-      />
-    ) : (
-      <WidgetWrapper>
-        <Headline title="Latest Blog Posts" subtitle="Coming soon — technical deep-dives on each project." />
-      </WidgetWrapper>
-    )
-  }
+  <WidgetWrapper>
+    <Headline title="Latest Blog Posts" classes={{ container: 'mb-10' }} />
+    {
+      latestPosts.length > 0 ? (
+        <>
+          <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {latestPosts.map((post) => (
+              <BlogCard post={post} />
+            ))}
+          </div>
+          <div class="mt-8 text-center">
+            <a
+              href="/blog"
+              class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+            >
+              View all posts →
+            </a>
+          </div>
+        </>
+      ) : (
+        <p class="text-center text-slate-400 dark:text-slate-500">
+          Coming soon — technical deep-dives on each project.
+        </p>
+      )
+    }
+  </WidgetWrapper>
 
   <!-- About CTA -->
   <section class="py-8 px-4 sm:px-6">
