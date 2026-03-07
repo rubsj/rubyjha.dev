@@ -20,7 +20,7 @@ featured: true
 publishDate: 2026-02-20
 ---
 
-import MermaidDiagram from '~/components/mdx/MermaidDiagram.astro';
+import EmbeddingFineTuningDiagram from '~/components/mdx/EmbeddingFineTuningDiagram.astro';
 
 ## The Problem
 
@@ -30,15 +30,7 @@ I needed to fix the embedding space and compare two approaches: full fine-tuning
 
 ## Architecture
 
-<MermaidDiagram
-  chart={`flowchart LR
-    A[1475 Training Pairs] --> B[all-MiniLM-L6-v2]
-    B --> C[Standard / 22.7M params]
-    B --> D[LoRA / 73K params]
-    C --> E[8-Metric Eval]
-    D --> E
-    E --> F[HTML Report / 8 Charts]`}
-/>
+<EmbeddingFineTuningDiagram />
 
 Both approaches start from the same base model and train on identical sentence pairs using CosineSimilarityLoss. Standard fine-tuning updates all 22.7M parameters (86.7 MB model). LoRA injects rank-8 adapters on query/value layers, training only 73K parameters (0.28 MB adapter file). Evaluation uses 8 metrics so no single metric can mask a failure. Everything renders into a self-contained HTML comparison report.
 
