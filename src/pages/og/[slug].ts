@@ -3,7 +3,7 @@ import { OGImageRoute } from 'astro-og-canvas';
 const pages: Record<string, { title: string; description: string }> = {
   home: {
     title: 'Ruby Jha',
-    description: 'Engineering Manager · Generative AI · Cloud',
+    description: 'Engineering Manager · Applied AI · Cloud',
   },
   about: {
     title: 'About — Ruby Jha',

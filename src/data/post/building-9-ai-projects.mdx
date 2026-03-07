@@ -1,7 +1,7 @@
 ---
 publishDate: 2026-02-23
-title: 'Building 9 AI Projects in 8 Weeks (While Working Full-Time)'
-excerpt: 'How I am building a portfolio of 9 production-grade AI systems — from synthetic data to multi-agent orchestration — as an Engineering Manager pivoting into applied AI.'
+title: 'Building 9 AI Projects (While Working Full-Time)'
+excerpt: 'Why I am building 9 AI systems from scratch while working full-time as an Engineering Manager. The portfolio, the progression, and what I have learned so far.'
 category: 'project-deep-dives'
 tags:
   - engineering-management
@@ -13,36 +13,32 @@ author: 'Ruby Jha'
 series: '9-ai-projects'
 seriesOrder: 1
 draft: false
-image: '~/assets/images/default.png'
 metadata:
-  description: 'Ruby Jha explains building 9 production-grade AI systems in 8 weeks while working full-time — covering synthetic data, RAG evaluation, LLM fine-tuning, and multi-agent orchestration with real metrics.'
+  description: 'Why I am building 9 AI systems from scratch while working full-time as an Engineering Manager. The portfolio, the progression, and what I have learned so far.'
 ---
 
-import Callout from '~/components/mdx/Callout.astro';
 import MetricCard from '~/components/mdx/MetricCard.astro';
 import MetricsGrid from '~/components/mdx/MetricsGrid.astro';
 
-## Why an Engineering Manager Is Building AI Systems
+## The reason
 
-I have spent 20+ years building enterprise platforms and leading engineering teams — 7+ of those years in people management. At State Street, I own platform strategy for a Self-Service Portal serving 40+ enterprise customers, driving $250K/month in operational cost savings and a 60% reduction in support demand. At EY, I ran a 12-engineer global organization across the US, India, and Poland. At Centene, I led modernization of a healthcare platform covering approximately 44 million lives.
+I have spent 20 years building through every major shift in enterprise software. Mainframe to client-server, on-prem to cloud, monolith to microservices. Each shift changed what engineering leaders needed to know. The current shift to AI is no different, except it is happening faster.
 
-That is a solid engineering leadership track record. But I noticed something shifting in the industry: the next generation of engineering leaders needs to be AI-literate, not just AI-adjacent. Reviewing PRs from ML engineers isn't enough. Approving infrastructure budgets for GPU clusters isn't enough. I wanted to understand the systems — how RAG pipelines actually retrieve and rank, why fine-tuning sometimes fails silently, what multi-agent orchestration looks like when agents disagree.
-
-So I decided to build. Not take courses. Not watch tutorials. Build production-grade AI systems with real evaluation metrics, honest tradeoff documentation, and architecture decisions I can defend in a technical interview.
+Every product is adding AI capabilities, every team needs people who understand these systems, and the engineering leaders who cannot build with AI will be managing work they do not understand. I did not want to be that leader. So I started building. Nine AI systems, each with evaluation metrics, architecture decision records, and documented tradeoffs.
 
 ## The Portfolio Architecture
 
-These aren't random projects stitched together to fill a GitHub profile. They follow a deliberate progression through the applied AI stack:
+The 9 projects follow a deliberate progression through the applied AI stack:
 
-1. **Data Generation** (P1) — Schema-driven synthetic data with Pydantic validation and LLM-as-Judge quality scoring
-2. **Evaluation** (P2) — Multi-strategy RAG evaluation comparing 15 vector configurations across chunking, embeddings, and reranking
-3. **Fine-Tuning** (P3) — Contrastive embedding fine-tuning: standard vs LoRA, head-to-head with comprehensive metrics
-4. **Applied RAG** (P4-P5) — AI Resume Coach and a production RAG pipeline with hybrid search and FastAPI endpoints
-5. **Multi-Agent Systems** (P6-P9) — Feedback intelligence, sprint planning, digital clone, and DevOps RCA — all using CrewAI orchestration
+1. **Data Generation** (P1): Schema-driven synthetic data with Pydantic validation and LLM-as-Judge quality scoring
+2. **Evaluation** (P2): Multi-strategy RAG evaluation comparing 15 vector configurations across chunking, embeddings, and reranking
+3. **Fine-Tuning** (P3): Contrastive embedding fine-tuning: standard vs LoRA, head-to-head with comprehensive metrics
+4. **Applied RAG** (P4-P5): AI Resume Coach and a production RAG pipeline with hybrid search and FastAPI endpoints
+5. **Multi-Agent Systems** (P6-P9): Feedback intelligence, sprint planning, digital clone, and DevOps RCA. All using CrewAI orchestration.
 
 Each project builds on the previous. P1 generates data that could train models evaluated by P2's framework. P3's fine-tuned embeddings feed into P5's production pipeline. P6-P9 all use multi-agent patterns that emerge naturally once you understand the single-agent limitations from P4-P5.
 
-## What's Done So Far
+## What is done so far
 
 Three projects are complete. Here are the real numbers:
 
@@ -58,38 +54,24 @@ Three projects are complete. Here are the real numbers:
   <MetricCard label="P3: Model Size Reduction" value="309x" />
 </MetricsGrid>
 
-**P1: Synthetic Data Generation** took 14 hours. The pipeline generates schema-driven records using GPT-4o-mini, then validates them with a GPT-4o LLM-as-Judge. The interesting finding wasn't the 100% generation success rate — it was calibrating the judge. My first judge prompt approved everything (useless). After four iterations, I hit a 20% failure rate that matched my manual assessment. The correction loop then reduced failures by 78%.
+**P1: Synthetic Data Generation** took 14 hours. The pipeline generates schema-driven records using GPT-4o-mini, then validates them with a GPT-4o LLM-as-Judge. The interesting finding was not the 100% generation success rate. It was calibrating the judge. My first judge prompt approved everything (useless). After four iterations, I hit a 20% failure rate that matched my manual assessment. The correction loop then reduced failures by 78%.
 
-**P2: RAG Evaluation Pipeline** took 19 hours. I tested 15 vector configurations — every combination of chunking strategy, embedding model, and reranking. The best config (semantic chunking + OpenAI embeddings + Cohere reranking) hit Recall@5 of 0.747, beating the BM25 keyword baseline by 96%. But the most important finding was a faithfulness score of only 0.511 — meaning the LLM hallucinated almost half the time even when the retriever found the right chunks. Good retrieval is necessary but not sufficient. The project ships with 384+ tests at 95% coverage.
+**P2: RAG Evaluation Pipeline** took 19 hours. I tested 15 vector configurations. Every combination of chunking strategy, embedding model, and reranking. The best config (semantic chunking + OpenAI embeddings + Cohere reranking) hit Recall@5 of 0.747, beating the BM25 keyword baseline by 96%. But the most important finding was a faithfulness score of only 0.511. The LLM hallucinated almost half the time even when the retriever found the right chunks. Good retrieval is necessary but not sufficient. The project ships with 557 tests at 95% coverage.
 
-**P3: Contrastive Embedding Fine-Tuning** took 12 hours. I ran a head-to-head comparison: standard fine-tuning (all 22.7M parameters) vs LoRA (73K parameters — 0.32% of the model). LoRA achieved 96.9% of standard performance with a 309x smaller model. The hidden lesson: LoRA needs a 10x higher learning rate than standard fine-tuning. My first attempt with the default learning rate produced garbage — and I would have wrongly concluded LoRA doesn't work for sentence transformers.
+**P3: Contrastive Embedding Fine-Tuning** took 12 hours. I ran a head-to-head comparison: standard fine-tuning (all 22.7M parameters) vs LoRA (73K parameters, 0.32% of the model). LoRA achieved 96.9% of standard performance with a 309x smaller model. The hidden lesson: LoRA needs a 10x higher learning rate than standard fine-tuning. My first attempt with the default learning rate produced garbage. I would have wrongly concluded LoRA does not work for sentence transformers.
 
-## What "Production-Grade" Means to Me
+## What separates these from tutorials
 
-Every tutorial on the internet will show you how to build a RAG pipeline in 20 lines of LangChain. That's not what these projects are. Production-grade means:
+Every tutorial shows you how to build a RAG pipeline in 20 lines. That is not what these projects are. Each one has evaluation frameworks with baselines, architecture decision records including paths I did not take, error handling for when things break, real test coverage (P2 has 557 tests, P3 has 112), and deployment considerations documented in ADRs.
 
-- **Evaluation frameworks** — not just "it works," but measured against baselines with reproducible metrics
-- **Architecture Decision Records** — every major "why" is documented, including the paths I didn't take
-- **Error handling** — what happens when the LLM returns garbage, when the vector store is empty, when the API rate-limits you
-- **Real test coverage** — P2 has 384+ tests. P3 has 124 tests at 94% coverage. Not afterthoughts — these were written as part of the build
-- **Deployment considerations** — containerized where appropriate, CLI interfaces for reproducibility, structured logging
+The easiest way to spot a tutorial project: ask "what happens when it fails?" These projects have an answer.
 
-<Callout type="tip">
-  The easiest way to spot a tutorial project vs a production system: ask "what happens when it fails?" Tutorial projects
-  don't have an answer. Production systems have error handling, retry logic, and degradation strategies documented in
-  ADRs.
-</Callout>
+## This site is also a project
 
-## The Meta-Project
+rubyjha.dev is built with Astro 5.0, deployed on Cloudflare Pages, with content in MDX and custom components for metrics and architecture diagrams. Eventually it will include a RAG chatbot that answers questions about my work using these blog posts and project writeups as its knowledge base.
 
-There is a tenth project hiding in plain sight: this site. rubyjha.dev is built with Astro 5.0, deployed on Cloudflare Pages, with content in MDX featuring custom components for metrics, callouts, and architecture diagrams. The blog you are reading renders from a content collection with Zod schema validation, reading time estimation, and structured data for SEO.
+## What comes next
 
-Eventually, this site will include a RAG chatbot (Project 5's pipeline) that answers questions about my work — using the very blog posts and project writeups as its knowledge base. The portfolio demonstrates the skills it describes.
+This is post #1 in the series. Each completed project gets a deep-dive post with architecture diagrams, real metrics, and the decisions that shaped the system, including the ones that did not work on the first try.
 
-## Follow Along
-
-This is post #1 in the "9 AI Projects" series. Each completed project gets a deep-dive post with real architecture diagrams, honest metrics, and the decisions that shaped the system — including the ones that didn't work on the first try.
-
-The next post will cover P1: Synthetic Data Generation in detail — how to build an LLM-as-Judge that actually catches failures, and why calibrating the judge is harder than building the generator.
-
-All code is open source at [github.com/rubsj/ai-portfolio](https://github.com/rubsj/ai-portfolio). If you are an engineering leader thinking about building AI systems yourself, or a hiring manager evaluating whether an EM can actually be technical — I hope this series gives you a useful data point.
+All code is open source at [github.com/rubsj/ai-portfolio](https://github.com/rubsj/ai-portfolio).
