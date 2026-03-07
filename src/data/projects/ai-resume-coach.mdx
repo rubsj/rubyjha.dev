@@ -1,6 +1,6 @@
 ---
 title: 'AI-Powered Resume Coach'
-description: 'Data-driven resume failure analysis pipeline. Generates 250 synthetic resumes, applies deterministic labeling, and proves via A/B testing that template choice accounts for a 66-percentage-point difference in failure rates.'
+description: 'I generated 250 synthetic resumes across 5 fit levels, labeled them for 5 failure modes with zero LLM calls, and found that writing template choice accounts for a 66-percentage-point difference in failure rates (chi-squared=32.74, p<0.001).'
 projectNumber: 4
 status: 'completed'
 tags: ['rag', 'prompt-engineering', 'fastapi', 'synthetic-data', 'pydantic']
@@ -21,107 +21,47 @@ featured: false
 publishDate: 2026-02-22
 ---
 
-import Callout from '~/components/mdx/Callout.astro';
-import MetricCard from '~/components/mdx/MetricCard.astro';
-import MetricsGrid from '~/components/mdx/MetricsGrid.astro';
-import MermaidDiagram from '~/components/mdx/MermaidDiagram.astro';
+import ResumePipelineDiagram from '~/components/mdx/ResumePipelineDiagram.astro';
 
 ## The Problem
 
-Job seekers frequently submit resumes with subtle but disqualifying flaws: skills that don't match the job description, experience level mismatches, or awkward AI-generated language. Traditional resume advice is generic and untestable — "improve your summary" isn't actionable, and there's no way to measure whether one approach actually works better than another.
+Resume advice is generic and untestable. "Improve your summary" is not actionable. There is no way to know whether one approach actually works better than another without controlled data.
 
-I built a production-grade pipeline that generates controlled synthetic resume data, applies deterministic failure labeling (zero LLM calls, ~250ms for 250 pairs), validates labels with a GPT-4o judge, and runs a statistically rigorous A/B test across 5 writing templates. The result: quantified, actionable evidence about what causes resumes to fail — and proof that template choice matters more than content.
+I wanted to answer a specific question: what causes resumes to fail screening, and can you measure it? So I built a pipeline that generates 250 synthetic resumes across 5 fit levels, labels each one for 5 failure modes using deterministic rules (zero LLM calls, 250ms for all 250 pairs), and runs A/B tests across writing templates to find what actually matters.
 
 ## Architecture
 
-<MermaidDiagram
-  chart={`graph TD
-  A[Generation: 50 Jobs x 5 Fit Levels] --> B[250 Synthetic Resumes]
-  B --> C[Deterministic Labeler: 5 Failure Modes]
-  C --> D[GPT-4o Judge: Quality Scoring]
-  D --> E[Correction Loop: Instructor Retry]
-  E --> F[Analyzer: 9 Charts + A/B Test]
-  F --> G[Multi-Hop Questions: 4 per Pair]
-  G --> H[ChromaDB Vector Store]
-  H --> I[FastAPI: 9 Endpoints]
-  I --> J[Streamlit Dashboard]`}
-/>
+<ResumePipelineDiagram />
 
-Each module reads from JSONL files and writes output back to the same data directory — clean, auditable, and resumable at any stage. The labeler is pure Python with zero LLM calls: deterministic, ~250ms for 250 pairs, and fully unit-testable with constructed fixtures. The GPT-4o judge is optional (controlled by `--skip-judge`), keeping the fast path cheap and fast.
+Each module reads from JSONL files and writes output back to the same directory. Resumable at any stage. The labeler is pure Python with zero LLM calls: deterministic, 250ms for 250 pairs, fully unit-testable. The GPT-4o judge is optional (controlled by `--skip-judge`), keeping the fast path cheap.
 
-The pipeline generates 250 resumes across 50 jobs and 5 fit levels (excellent, good, partial, poor, mismatch), then labels each for 5 failure modes using Jaccard similarity over normalized skills. A 4-stage SkillNormalizer canonicalizes skills before comparison — without it, `"Python 3.11"` vs `"Python"` scores Jaccard=0.0 and the entire analysis breaks.
+A 4-stage SkillNormalizer canonicalizes skills before comparison. Without it, "Python 3.11" versus "Python" scores Jaccard=0.0 and the entire analysis breaks. A Day 1.5 audit found this exact bug: the pipeline reported 250/250 successes, but actual JSONL output showed skills generated as full sentences instead of tokens.
 
 ## Key Results
 
-<MetricsGrid>
-  <MetricCard label="Template Quality Gap" value="66pp" />
-  <MetricCard label="A/B Test" value="χ² = 32.74" />
-  <MetricCard label="Resumes Generated" value="250" />
-  <MetricCard label="Tests Written" value="532" />
-  <MetricCard label="ADRs" value="5" />
-  <MetricCard label="API Endpoints" value="9" />
-</MetricsGrid>
+`casual` achieved a 34% failure rate while `career_changer` hit 100%. That is a 66-percentage-point spread (chi-squared=32.74, p=1.35e-06). Fix the template before optimizing the content it generates.
 
-The A/B test across 5 writing templates produced the strongest finding: `casual` achieved a 34% failure rate while `career_changer` hit 100% — a 66-percentage-point spread that's statistically significant (χ²=32.74, df=4, p=1.35e-06). This is actionable: fix the template before optimizing the content it generates.
-
-Skill overlap (Jaccard similarity) forms a near-perfect gradient across fit levels: excellent=0.669, good=0.607, partial=0.620, poor=0.212, mismatch=0.005. This gradient validates the entire labeling system — skill overlap is the dominant signal for resume fit. The pipeline also uncovered that 58.4% of generated resumes contained awkward language and 50.8% were missing core skills — failure modes that are invisible without systematic labeling.
-
-The GPT-4o judge averaged a 0.541 quality score, and the correction loop achieved 8/8 (100%) correction rate on flagged resumes. The FastAPI service exposes 9 endpoints with auto-generated Swagger documentation, backed by ChromaDB for semantic search over all 250 indexed resumes.
+Skill overlap (Jaccard similarity) forms a clean gradient across fit levels: excellent=0.669, good=0.607, partial=0.620, poor=0.212, mismatch=0.005.
+58.4% of generated resumes contained awkward language, 50.8% were missing core skills. The GPT-4o judge averaged 0.541 quality score. Correction loop achieved 8/8 on flagged resumes.
 
 ## Key Decisions
 
-<Callout type="tip">
-  **Instructor with nested schemas for generation.** 250 resumes with 4 levels of Pydantic nesting (`Resume →
-  ContactInfo, Skill[], Experience[], Education[]`) generated at 100% validation rate. Instructor's `max_retries=5` with
-  automatic `ValidationError` injection turns blind retries into targeted fixes — the model sees exactly which of ~30
-  validation points failed. The same Instructor pattern from P1's flat 7-field schema scaled unchanged to P4's 35-model
-  nested schema.
-</Callout>
+**Instructor with nested schemas.** 250 resumes with 35 nested Pydantic models, 100% validation rate. Instructor's `max_retries=5` with ValidationError injection means the model sees exactly which constraint failed. Same pattern from P1's flat schema scaled unchanged to P4's nested schema.
 
-<Callout type="info">
-  **Custom SkillNormalizer over third-party libraries.** A 4-stage pipeline: lowercase → version stripping (`"Python
-  3.11"` → `"python"`) → suffix removal → alias resolution (`"ML"` → `"machine learning"`). The entire Jaccard gradient
-  from excellent=0.669 to mismatch=0.005 depends on this canonicalization. A Day 1.5 audit discovered skills were being
-  generated as full sentences instead of tokens — the pipeline "succeeded" but Jaccard was near zero.
-</Callout>
+**Custom SkillNormalizer.** 4-stage pipeline: lowercase, version stripping, suffix removal, alias resolution. No third-party NLP library matched the alias rules I needed ("ML" to "machine learning"). The entire Jaccard gradient depends on this canonicalization.
 
-<Callout type="info">
-  **Two-phase validation: structural vs semantic.** Structural validation (Instructor/Pydantic at generation time) is
-  separated from semantic validation (labeler post-generation). The labeler is pure Python with zero LLM calls —
-  deterministic, ~250ms for 250 pairs, and fully unit-testable. Mixing both layers would make testing expensive and
-  debugging ambiguous.
-</Callout>
+**Two-phase validation.** Structural validation (Pydantic at generation time) separated from semantic validation (labeler post-generation). The labeler has zero LLM calls. Fully unit-testable with constructed fixtures.
 
-<Callout type="tip">
-  **FastAPI over Flask for the REST API.** All 14 request/response schemas defined in `schemas.py` are reused directly
-  as FastAPI endpoint parameters and `response_model` annotations — zero duplication. Auto-generates Swagger UI at
-  `/docs` with no additional code.
-</Callout>
+**FastAPI over Flask.** 14 Pydantic schemas reused directly as endpoint types. Auto-generates Swagger at /docs with no additional code.
 
-<Callout type="info">
-  **ChromaDB over FAISS for live API use.** Same `all-MiniLM-L6-v2` embedding model as P2, but ChromaDB was chosen
-  specifically for persistence across restarts and `where={"fit_level": ...}` metadata filtering. FAISS was the right
-  choice for P2's batch evaluation; ChromaDB is the right choice for P4's live API — same embeddings, different
-  operational requirements.
-</Callout>
+**ChromaDB over FAISS.** Same embedding model as P2, but ChromaDB was chosen for persistence across API restarts and metadata filtering. Different operational requirements than P2's batch evaluation.
 
-## Key Insights
+## Known Gaps
 
-<Callout type="warning">
-  **Skill normalization is foundational, not optional.** Without the 4-stage normalizer, the entire Jaccard gradient
-  collapses to near-zero. This is also where the Day 1.5 data audit paid off: the bug was invisible at the pipeline
-  level (250/250 successes reported) but catastrophic at the analysis level. Always inspect actual output files, not
-  just success counts.
-</Callout>
+**250 resumes is a controlled dataset, not a large one.** Enough to validate labeling logic and run a meaningful chi-squared test. Not enough to claim the template findings generalize. I would need 1,000+ with real job descriptions to test that.
 
-<Callout type="warning">
-  **Template choice matters more than content for failure rates.** The 66-percentage-point spread between best and worst
-  templates (χ²=32.74, p&lt;0.001) is the strongest signal in the dataset. Before optimizing resume content, fix the
-  template that shapes it.
-</Callout>
+**Awkward language detection is keyword-based.** The labeler flags phrases like "synergy" and "leverage" via a static list. It misses subtler AI tells like hedging patterns and over-qualification. A classifier trained on actual AI-generated versus human-written resumes would catch more.
 
-<Callout type="warning">
-  **Aggregate metrics hide fundamental data issues.** The generation pipeline reported 250/250 successes on Day 1. Only
-  a manual audit of actual JSONL output revealed skills were full sentences instead of tokens, causing near-zero Jaccard
-  globally. Validate outputs, not just counts.
-</Callout>
+**Judge quality score of 0.541 is middling.** I have not investigated whether this reflects genuine resume quality issues or judge calibration problems. Comparing against human ratings would clarify.
+
+**No latency benchmarking on the API.** I measured pipeline quality but not endpoint response times under concurrent load.
