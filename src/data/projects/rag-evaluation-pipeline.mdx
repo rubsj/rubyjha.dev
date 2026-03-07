@@ -21,7 +21,7 @@ featured: true
 publishDate: 2026-02-17
 ---
 
-import MermaidDiagram from '~/components/mdx/MermaidDiagram.astro';
+import RagPipelineDiagram from '~/components/mdx/RagPipelineDiagram.astro';
 
 ## The Problem
 
@@ -31,20 +31,7 @@ I wanted actual numbers. So I built a framework that tests every combination of 
 
 ## Architecture
 
-<MermaidDiagram
-  chart={`flowchart LR
-  D[3 Markdown Docs] --> C[5 Chunking Strategies]
-  C --> E[3 Embedding Models]
-  C --> BM[BM25 Baseline]
-  E --> F[FAISS Index]
-  F --> Q[56 QA Pairs]
-  BM --> Q
-  Q --> R[Retrieval Metrics]
-  R --> RR[Cohere Reranking]
-  RR --> RA[RAGAS Quality]
-  RA --> J[LLM Judge]
-  J --> B[Braintrust]`}
-/>
+<RagPipelineDiagram />
 
 16 configs come from crossing 5 chunking strategies with 3 embedding models, plus a BM25 baseline. Each config gets its own FAISS index. All 16 are evaluated against the same 56 synthetic QA pairs so comparisons are apples-to-apples. Every result is logged to Braintrust for reproducibility.
 
