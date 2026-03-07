@@ -20,7 +20,7 @@ featured: true
 publishDate: 2026-02-15
 ---
 
-import MermaidDiagram from '~/components/mdx/MermaidDiagram.astro';
+import PipelineDiagram from '~/components/mdx/PipelineDiagram.astro';
 
 ## The Problem
 
@@ -28,16 +28,7 @@ I needed training data for a home DIY domain. No suitable public dataset existed
 
 ## Architecture
 
-<MermaidDiagram
-  chart={`flowchart LR
-    T[Templates v1 and v2] --> G[Generator GPT-4o-mini + Instructor]
-    G --> V[Validator Pydantic]
-    V --> E[Evaluator GPT-4o Judge]
-    E --> A[Analysis Pandas + Seaborn]
-    A -- failure patterns --> C[Corrector]
-    C -- improved templates --> T
-    C -- fixed records --> E`}
-/>
+<PipelineDiagram />
 
 GPT-4o-mini generates the records. GPT-4o judges them. I used the Instructor library to wire Pydantic validation directly into the API calls so malformed responses get retried automatically instead of silently passing through. That one decision eliminated most parsing issues.
 
