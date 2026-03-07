@@ -1,7 +1,7 @@
 ---
 title: 'Jira Sprint Planning Agent'
-description: 'Multi-agent system for automated sprint planning — agents analyze backlog, estimate effort, identify dependencies, and propose sprint composition.'
-projectNumber: 7
+description: 'Multi-agent system that analyzes a Jira backlog, estimates effort, identifies dependencies, and proposes sprint composition. Built with CrewAI.'
+projectNumber: 8
 status: 'planned'
 tags: ['multi-agent', 'crewai', 'engineering-management']
 techStack: ['Python', 'CrewAI', 'OpenAI', 'Jira API']
@@ -10,6 +10,8 @@ featured: false
 publishDate: 2026-02-22
 ---
 
-Sprint planning is a high-context, high-friction process that consumes several hours of engineering leadership time every two weeks. This project automates the analytical heavy lifting: a CrewAI multi-agent system that ingests the Jira backlog, estimates relative effort using historical velocity data, identifies blocking dependencies through issue link analysis, and proposes a sprint composition that respects team capacity constraints.
+Sprint planning is one of those meetings that takes an hour and still ends with arguments about capacity. The backlog is a wall of tickets. Dependencies are buried in comments. Estimates are guesses based on whoever talks loudest.
 
-The output isn't a mandate — it's a structured recommendation that the engineering manager reviews and adjusts. The goal is to reduce the prep time from hours to minutes by automating the mechanical parts (backlog triage, dependency mapping, capacity math) so the human conversation can focus on judgment calls and context that the system can't see.
+This project builds a multi-agent system that does the analysis before the meeting starts. Agents read the backlog, estimate effort based on historical ticket data, flag dependency chains, and propose a sprint composition that fits within team capacity. The output is a draft sprint plan that the team can discuss and adjust, not accept blindly.
+
+The interesting constraint is that sprint planning is inherently a judgment call. The system needs to propose, not decide. Getting that balance right in the agent prompts is the core challenge.
