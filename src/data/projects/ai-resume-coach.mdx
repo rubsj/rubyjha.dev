@@ -39,11 +39,10 @@ A 4-stage SkillNormalizer canonicalizes skills before comparison. Without it, "P
 
 ## Key Results
 
-The A/B test across 5 writing templates produced the strongest finding. `casual` achieved a 34% failure rate while `career_changer` hit 100%. That is a 66-percentage-point spread (chi-squared=32.74, p=1.35e-06). Fix the template before optimizing the content it generates.
+`casual` achieved a 34% failure rate while `career_changer` hit 100%. That is a 66-percentage-point spread (chi-squared=32.74, p=1.35e-06). Fix the template before optimizing the content it generates.
 
-Skill overlap (Jaccard similarity) forms a clean gradient across fit levels: excellent=0.669, good=0.607, partial=0.620, poor=0.212, mismatch=0.005. This confirms Jaccard is the dominant signal for resume fit.
-
-Other findings: 58.4% of generated resumes contained awkward language, 50.8% were missing core skills. The GPT-4o judge averaged 0.541 quality score. Correction loop achieved 8/8 on flagged resumes.
+Skill overlap (Jaccard similarity) forms a clean gradient across fit levels: excellent=0.669, good=0.607, partial=0.620, poor=0.212, mismatch=0.005.
+58.4% of generated resumes contained awkward language, 50.8% were missing core skills. The GPT-4o judge averaged 0.541 quality score. Correction loop achieved 8/8 on flagged resumes.
 
 ## Key Decisions
 
