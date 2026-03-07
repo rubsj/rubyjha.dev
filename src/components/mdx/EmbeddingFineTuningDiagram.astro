@@ -1,0 +1,66 @@
+---
+/**
+ * Contrastive Embedding Fine-Tuning architecture diagram — static HTML/CSS/Tailwind.
+ * Replaces the Mermaid flowchart that Dagre cannot size correctly in SSR
+ * (getBBox() returns zeros in happy-dom, causing node overlap).
+ *
+ * Layout: vertical stepper with a 2-col split for Standard vs LoRA approaches,
+ * rejoining at the shared evaluation suite.
+ */
+---
+
+<div class="not-prose my-8 mx-auto max-w-sm font-sans text-sm">
+  <!-- Input -->
+  <div
+    class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 flex items-center justify-between"
+  >
+    <span class="font-semibold text-slate-800 dark:text-slate-100">1,475 Training Pairs</span>
+    <span class="text-xs text-slate-500 dark:text-slate-400">dating profiles</span>
+  </div>
+
+  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+  <!-- Base model -->
+  <div
+    class="rounded-lg border-2 border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-950 px-4 py-2.5 flex items-center justify-between"
+  >
+    <span class="font-semibold text-indigo-900 dark:text-indigo-100">all-MiniLM-L6-v2</span>
+    <span class="text-xs text-indigo-600 dark:text-indigo-400">base model</span>
+  </div>
+
+  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+  <!-- Split: Standard vs LoRA -->
+  <div class="grid grid-cols-2 gap-2">
+    <div class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-3 py-2.5">
+      <span class="font-semibold text-slate-800 dark:text-slate-100">Standard</span>
+      <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">22.7M params · 86 MB</p>
+    </div>
+    <div
+      class="rounded-lg border-2 border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-950 px-3 py-2.5"
+    >
+      <span class="font-semibold text-violet-900 dark:text-violet-100">LoRA</span>
+      <p class="mt-0.5 text-xs text-violet-600 dark:text-violet-400">73K params · 0.28 MB</p>
+    </div>
+  </div>
+
+  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+  <!-- Eval suite -->
+  <div
+    class="rounded-lg border-2 border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-950 px-4 py-2.5 flex items-center justify-between"
+  >
+    <span class="font-semibold text-indigo-900 dark:text-indigo-100">8-Metric Eval Suite</span>
+    <span class="text-xs text-indigo-600 dark:text-indigo-400">Spearman · AUC-ROC · Cohen's d</span>
+  </div>
+
+  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+  <!-- Output -->
+  <div
+    class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 flex items-center justify-between"
+  >
+    <span class="font-semibold text-slate-800 dark:text-slate-100">HTML Comparison Report</span>
+    <span class="text-xs text-slate-500 dark:text-slate-400">8 charts</span>
+  </div>
+</div>
