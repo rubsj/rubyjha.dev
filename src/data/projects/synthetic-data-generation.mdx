@@ -8,11 +8,11 @@ techStack: ['Python', 'Pydantic', 'OpenAI API', 'GPT-4o-mini', 'GPT-4o', 'Stream
 githubUrl: 'https://github.com/rubsj/ai-portfolio/tree/main/01-synthetic-data-home-diy'
 demoType: 'streamlit'
 keyMetrics:
-  - label: 'Generation Success'
+  - label: 'Records Passed'
     value: '100%'
-  - label: 'Inter-rater Agreement'
+  - label: 'Human-AI Agreement'
     value: '81.7%'
-  - label: 'Correction Improvement'
+  - label: 'Fewer Failures After V2'
     value: '78% reduction'
   - label: 'Failure Reduction'
     value: '36 → 0'
@@ -20,46 +20,32 @@ featured: true
 publishDate: 2026-02-15
 ---
 
-import MetricCard from '~/components/mdx/MetricCard.astro';
-import MetricsGrid from '~/components/mdx/MetricsGrid.astro';
 import MermaidDiagram from '~/components/mdx/MermaidDiagram.astro';
 
 ## The Problem
 
-I needed training data for a home DIY domain. No suitable public dataset existed and manual labeling would have taken weeks. So I built a generation pipeline. The easy part was getting GPT-4o-mini to produce records. The hard part was catching the subtle failures: fields that pass type checks but contain nonsensical values, descriptions that contradict their categories, difficulty ratings that don't match actual complexity. I needed a quality gate that could catch what schema validation misses.
+I needed training data for a home DIY domain. No suitable public dataset existed and manual labeling would have taken weeks. So I built a generation pipeline. The easy part was getting GPT-4o-mini to produce records. The hard part was catching subtle failures. Fields that pass type checks but contain nonsensical values. Descriptions that contradict their categories. Difficulty ratings that don't match actual complexity. I needed a quality gate that could catch what schema validation misses.
 
 ## Architecture
 
 <MermaidDiagram
-  chart={`graph TD
-  A[Home DIY Topics] --> B[Pydantic Schema Definition]
-  B --> C[GPT-4o-mini: Record Generation]
-  C --> D[30 Synthetic Records]
-  D --> E[GPT-4o: LLM-as-Judge]
-  E --> F{Pass Validation?}
-  F -->|Yes| G[Valid Records]
-  F -->|No| H[Correction Loop]
-  H --> C
-  G --> I[Streamlit Dashboard]
-  I --> J[Story Mode + Analytics]`}
+  chart={`flowchart LR
+    T[Templates v1 and v2] --> G[Generator GPT-4o-mini + Instructor]
+    G --> V[Validator Pydantic]
+    V --> E[Evaluator GPT-4o Judge]
+    E --> A[Analysis Pandas + Seaborn]
+    A -- failure patterns --> C[Corrector]
+    C -- improved templates --> T
+    C -- fixed records --> E`}
 />
 
 GPT-4o-mini generates the records. GPT-4o judges them. I used the Instructor library to wire Pydantic validation directly into the API calls so malformed responses get retried automatically instead of silently passing through. That one decision eliminated most parsing issues.
 
 ## Key Results
 
-<MetricsGrid>
-  <MetricCard label="Generation Success" value="100%" />
-  <MetricCard label="Failures" value="36 → 0" />
-  <MetricCard label="Inter-rater Agreement" value="81.7%" />
-  <MetricCard label="Correction Improvement" value="78% reduction" />
-  <MetricCard label="Records Generated" value="30" />
-  <MetricCard label="Analytical Charts" value="7" />
-</MetricsGrid>
-
 All 30 records passed schema validation on the first attempt. But the real work was calibrating the judge. My first judge prompt approved everything, which meant it was useless. After four rounds of prompt refinement, I got it to a 20% failure rate that matched my own manual assessment. Dual labeling achieved 81.7% agreement between the LLM judge and my human labels.
 
-The correction story went in three stages. V1 templates produced 36 failures across 180 evaluations. Failure analysis showed two dominant patterns: incomplete answers (50%) and poor quality tips (43%). Improved V2 templates cut failures to 8. Targeted fixes brought it to zero. The key insight was fixing the templates, not patching individual records. This is documented across 4 ADRs in the repo.
+V1 templates produced 36 failures across 180 evaluations. Failure analysis showed two dominant patterns: incomplete answers (50%) and poor quality tips (43%). Both concentrated in plumbing and HVAC categories. Electrical had zero failures because its template was already specific enough. Improved V2 templates cut failures to 8. Targeted fixes brought it to zero. The key insight was fixing the templates, not patching individual records. This is documented across 4 ADRs in the repo.
 
 ## Key Decisions
 
@@ -70,3 +56,9 @@ The correction story went in three stages. V1 templates produced 36 failures acr
 **Judge calibration through iteration.** A judge that approves everything is worthless. Four prompt versions, each adding specificity: field-level rules, cross-field consistency, domain plausibility. The 20% failure rate matched my manual review of a held-out sample.
 
 **Fix templates, not records.** When the judge found systematic issues like difficulty ratings skewing "Easy," I fixed the generation template rather than patching individual outputs. Four ADRs document each failure pattern and the template change that resolved it.
+
+## Known Gaps
+
+**No human-in-the-loop review.** 81.7% agreement means about 18% of judge calls are wrong. Good enough for finding failure patterns in bulk. Not good enough for deciding whether a specific record passes. A review step between judge evaluation and correction would close this.
+
+**No drift monitoring.** Templates degrade as the domain shifts. A random-sample re-evaluation on each pipeline run would catch this. The closed-loop pattern holds, but calibration needs to be continuous, not one-shot.
