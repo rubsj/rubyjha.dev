@@ -134,7 +134,7 @@ The pipeline is not just a script. It is built with practices I would expect in 
 
 **Pydantic v2 as a first-pass filter.** Every generated record passes through Pydantic validation before reaching the judge. Field validators enforce minimum lengths, pattern matching catches structural issues, and type checking eliminates malformed outputs. This creates a two-stage quality gate: structural correctness (Pydantic) → semantic quality (LLM judge). The judge never wastes tokens evaluating records that are structurally broken.
 
-**Instructor for structured generation.** I used the Instructor library to wrap OpenAI calls with Pydantic response models. When the LLM returns invalid JSON, Instructor automatically retries with the validation error as feedback. Result: 100% generation success rate with zero manual JSON parsing. This is documented in ADR-001 — the decision was Instructor over raw OpenAI calls, and the auto-retry on validation failure was the deciding factor.
+**Instructor for structured generation.** I used the Instructor library to wrap OpenAI calls with Pydantic response models. When the LLM returns invalid JSON, Instructor automatically retries with the validation error as feedback. Result: 100% generation success rate with zero manual JSON parsing. This is documented in ADR-001. The decision was Instructor over raw OpenAI calls, and the auto-retry on validation failure was the deciding factor.
 
 **MD5-keyed caching.** Every LLM call is cached by an MD5 hash of the prompt. During development, when I was iterating on judge prompts and template variations, this prevented redundant API calls. The cache saved roughly 40% of API costs during the calibration phase.
 
