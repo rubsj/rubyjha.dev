@@ -12,7 +12,7 @@ keyMetrics:
     value: '100%'
   - label: 'Human-AI Agreement'
     value: '81.7%'
-  - label: 'Fewer Failures After V2'
+  - label: 'V2 Improvement'
     value: '78% reduction'
   - label: 'Failure Reduction'
     value: '36 → 0'
@@ -36,7 +36,7 @@ GPT-4o-mini generates the records. GPT-4o judges them. I used the Instructor lib
 
 All 30 records passed schema validation on the first attempt. But the real work was calibrating the judge. My first judge prompt approved everything, which meant it was useless. After four rounds of prompt refinement, I got it to a 20% failure rate that matched my own manual assessment. Dual labeling achieved 81.7% agreement between the LLM judge and my human labels.
 
-V1 templates produced 36 failures across 180 evaluations. Failure analysis showed two dominant patterns: incomplete answers (50%) and poor quality tips (43%). Both concentrated in plumbing and HVAC categories. Electrical had zero failures because its template was already specific enough. Improved V2 templates cut failures to 8. Targeted fixes brought it to zero. The key insight was fixing the templates, not patching individual records. This is documented across 4 ADRs in the repo.
+V1 templates produced 36 failures across 180 evaluations. Failure analysis showed two dominant patterns: incomplete answers (50%) and poor quality tips (43%). Both concentrated in plumbing and HVAC categories. Electrical had zero failures because its template was already specific enough. Improved V2 templates cut failures to 8. Targeted fixes brought it to zero.
 
 ## Key Decisions
 
