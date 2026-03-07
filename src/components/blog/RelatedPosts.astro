@@ -2,7 +2,7 @@
 import { APP_BLOG } from 'astrowind:config';
 
 import { getRelatedPosts } from '~/utils/blog';
-import BlogHighlightedPosts from '../widgets/BlogHighlightedPosts.astro';
+import BlogCard from '~/components/blog/BlogCard.astro';
 import type { Post } from '~/types';
 import { getBlogPermalink } from '~/utils/permalinks';
 
@@ -16,16 +16,22 @@ const relatedPosts = post.tags ? await getRelatedPosts(post, 4) : [];
 ---
 
 {
-  APP_BLOG.isRelatedPostsEnabled ? (
-    <BlogHighlightedPosts
-      classes={{
-        container:
-          'pt-0 lg:pt-0 md:pt-0 intersect-once intersect-quarter motion-safe:md:opacity-0 motion-safe:md:intersect:animate-fade',
-      }}
-      title="Related Posts"
-      linkText="View All Posts"
-      linkUrl={getBlogPermalink()}
-      postIds={relatedPosts.map((post) => post.id)}
-    />
+  APP_BLOG.isRelatedPostsEnabled && relatedPosts.length > 0 ? (
+    <div class="mx-auto px-6 sm:px-6 max-w-3xl lg:max-w-5xl py-8 sm:py-12">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold font-heading tracking-tight">Related Posts</h2>
+        <a
+          href={getBlogPermalink()}
+          class="text-sm text-muted dark:text-slate-400 hover:text-primary dark:hover:text-blue-400 transition-colors"
+        >
+          View all posts »
+        </a>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {relatedPosts.map((relatedPost) => (
+          <BlogCard post={relatedPost} />
+        ))}
+      </div>
+    </div>
   ) : null
 }
