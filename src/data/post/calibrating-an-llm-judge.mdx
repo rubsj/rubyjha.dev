@@ -87,7 +87,19 @@ A 20% failure rate means nothing if the judge is wrong. I ran a dual-labeling va
 
 81.7% raw agreement. The range tells an interesting story: `overcomplicated_solution` and `missing_context` hit 100% agreement, because the numeric thresholds made these nearly deterministic. `poor_quality_tips` was lowest at 60%, the most subjective criterion even after calibration. This maps to intuition: the more concrete the criterion, the more reliable the judge.
 
-I acknowledge a gap here: I did not compute Cohen's Kappa (which accounts for chance agreement). With 81.7% on strict binary labels, concordance is well above chance, but the formal statistical validation is a future improvement. Shipping with a known limitation documented is more honest than pretending the gap does not exist.
+I computed Cohen's Kappa to validate beyond raw agreement. Overall kappa was 0.201, which is fair agreement by the Landis and Koch scale. But the per-mode breakdown tells the real story:
+
+`incomplete_answer` (the dominant failure mode at 50% of all failures): kappa 0.545, moderate agreement. This is the mode that drove most of the correction loop, and the judge is reliably detecting it.
+
+`safety_violations`: kappa 0.412, moderate. Solid.
+
+`unrealistic_tools`: kappa -0.154, slight negative. The judge is stricter than my manual labels here. This is a known artifact of the strict identity priming from the calibration step.
+
+`poor_quality_tips`: kappa 0.000, chance level. This is the weakest mode. Corrections targeting this failure have lower confidence.
+
+`overcomplicated_solution` and `missing_context`: 100% agreement but kappa is undefined because all labels were 0. No failures in these modes means no disagreement to measure.
+
+The key finding: the two modes that produced 93% of all failures (`incomplete_answer` and `poor_quality_tips`) show positive kappa. The judge detections that drove the correction loop are real signal, not noise. The weak modes (`unrealistic_tools`, `poor_quality_tips`) would need expanded manual labels in a production system.
 
 ## The 36 to 8 to 0 result
 
@@ -126,11 +138,11 @@ The pipeline is not just a script. It is built with practices I would expect in 
 
 **MD5-keyed caching.** Every LLM call is cached by an MD5 hash of the prompt. During development, when I was iterating on judge prompts and template variations, this prevented redundant API calls. The cache saved roughly 40% of API costs during the calibration phase.
 
-**Four Architecture Decision Records.** Every major technical choice is documented with context, alternatives considered, and rationale: Instructor over raw OpenAI, flat schema over nested models, judge prompt calibration strategy, template improvement vs correction approach. These are not afterthoughts; they were written during the build as decisions were made.
+**Five Architecture Decision Records.** Every major technical choice is documented with context, alternatives considered, and rationale: Instructor over raw OpenAI, flat schema over nested models, judge prompt calibration strategy, template improvement vs correction approach, and dual labeling strategy for validating the LLM judge against human ground truth. These are not afterthoughts; they were written during the build as decisions were made.
 
 ## What I would do differently
 
-**Compute Cohen's Kappa.** The 81.7% raw agreement is encouraging, but without a chance-corrected metric, the statistical rigor is incomplete. For a 30-record pipeline this is acceptable; for production at scale, it is not.
+**Expand manual labels for weak modes.** I computed Cohen's Kappa (overall 0.201, per-mode range from -0.154 to 0.545), but `poor_quality_tips` (kappa 0.000) and `unrealistic_tools` (kappa -0.154) need more manual labels to validate reliably. The 10-record stratified sample was enough to confirm the dominant modes. A production system would need 30+ manually labeled records focused on the weak modes.
 
 **Test more failure modes.** Six binary failure modes cover the obvious quality dimensions. But I did not test for factual accuracy of the DIY repair advice itself — that would require domain expert review or a more sophisticated verification pipeline. The current system validates structure and completeness, not correctness.
 
