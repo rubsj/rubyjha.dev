@@ -1,0 +1,89 @@
+---
+/**
+ * AI Resume Coach pipeline diagram — static HTML/CSS/Tailwind.
+ * Replaces the Mermaid flowchart that Dagre cannot size correctly in SSR
+ * (getBBox() returns zeros in happy-dom, causing node overlap).
+ *
+ * Layout: vertical stepper — 8 pipeline stages from generation to demo.
+ */
+---
+
+<div class="not-prose my-8 mx-auto max-w-sm font-sans text-sm">
+  <!-- Stage 1: Generation -->
+  <div
+    class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 flex items-center justify-between"
+  >
+    <span class="font-semibold text-slate-800 dark:text-slate-100">Generation</span>
+    <span class="text-xs text-slate-500 dark:text-slate-400">50 jobs × 5 fit levels</span>
+  </div>
+
+  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+  <!-- Stage 2: Labeler -->
+  <div
+    class="rounded-lg border-2 border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-950 px-4 py-2.5 flex items-center justify-between"
+  >
+    <span class="font-semibold text-indigo-900 dark:text-indigo-100">Labeler</span>
+    <span class="text-xs text-indigo-600 dark:text-indigo-400">5 failure modes · zero LLM calls</span>
+  </div>
+
+  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+  <!-- Stage 3: GPT-4o Judge -->
+  <div
+    class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 flex items-center justify-between"
+  >
+    <span class="font-semibold text-slate-800 dark:text-slate-100">GPT-4o Judge</span>
+    <span class="text-xs text-slate-500 dark:text-slate-400">quality score · optional</span>
+  </div>
+
+  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+  <!-- Stage 4: Corrector -->
+  <div
+    class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 flex items-center justify-between"
+  >
+    <span class="font-semibold text-slate-800 dark:text-slate-100">Corrector</span>
+    <span class="text-xs text-slate-500 dark:text-slate-400">Instructor retry · 8/8</span>
+  </div>
+
+  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+  <!-- Stage 5: Analyzer -->
+  <div
+    class="rounded-lg border-2 border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-950 px-4 py-2.5 flex items-center justify-between"
+  >
+    <span class="font-semibold text-indigo-900 dark:text-indigo-100">Analyzer</span>
+    <span class="text-xs text-indigo-600 dark:text-indigo-400">9 charts · A/B test</span>
+  </div>
+
+  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+  <!-- Stage 6: ChromaDB -->
+  <div
+    class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 flex items-center justify-between"
+  >
+    <span class="font-semibold text-slate-800 dark:text-slate-100">ChromaDB</span>
+    <span class="text-xs text-slate-500 dark:text-slate-400">vector store · 250 resumes</span>
+  </div>
+
+  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+  <!-- Stage 7: FastAPI -->
+  <div
+    class="rounded-lg border-2 border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-950 px-4 py-2.5 flex items-center justify-between"
+  >
+    <span class="font-semibold text-violet-900 dark:text-violet-100">FastAPI</span>
+    <span class="text-xs text-violet-600 dark:text-violet-400">9 endpoints · Swagger</span>
+  </div>
+
+  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+  <!-- Stage 8: Streamlit -->
+  <div
+    class="rounded-lg border-2 border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-950 px-4 py-2.5 flex items-center justify-between"
+  >
+    <span class="font-semibold text-violet-900 dark:text-violet-100">Streamlit</span>
+    <span class="text-xs text-violet-600 dark:text-violet-400">5-page demo</span>
+  </div>
+</div>
