@@ -1,0 +1,158 @@
+---
+publishDate: 2026-02-28
+title: 'How I Calibrated an LLM Judge That Approved Everything'
+excerpt: 'My first LLM judge had a 0% failure rate. That meant it was useless. This is the story of calibrating it to actually catch failures, and building a correction loop that took synthetic data failures from 36 to zero.'
+category: 'project-deep-dives'
+tags:
+  - synthetic-data
+  - llm-evaluation
+  - pydantic
+  - prompt-engineering
+  - python
+author: 'Ruby Jha'
+series: '9-ai-projects'
+seriesOrder: 2
+draft: false
+metadata:
+  description: 'My first LLM judge had a 0% failure rate. That meant it was useless. This is the story of calibrating it to actually catch failures, and building a correction loop that took synthetic data failures from 36 to zero.'
+---
+
+import MetricCard from '~/components/mdx/MetricCard.astro';
+import MetricsGrid from '~/components/mdx/MetricsGrid.astro';
+import PipelineDiagram from '~/components/mdx/PipelineDiagram.astro';
+
+## The problem
+
+Every AI tutorial starts with clean data. Real projects do not. If you are building an AI system that needs domain-specific training data and the data does not exist yet, you have two options: hire annotators for weeks, or generate synthetic data with an LLM.
+
+I chose generation. But generating synthetic data is the easy part. The hard part is knowing whether it is any good.
+
+For P1, I built a synthetic data pipeline for Home DIY Repair Q&A pairs. These are structured records with questions, answers, tool lists, step-by-step instructions, and safety warnings across five categories: appliance repair, plumbing, electrical, HVAC maintenance, and general home repair. The pipeline uses GPT-4o-mini for generation and GPT-4o as a judge to evaluate quality across six failure modes.
+
+The headline result: 36 evaluation failures became 0 through a closed-loop system that diagnoses its own problems and fixes them upstream. But the real story is about calibrating the judge. A judge that approves everything is worse than no judge at all.
+
+## The architecture
+
+The pipeline is a loop, not a straight line.
+
+<PipelineDiagram />
+
+The execution flow: Generate 30 records using category-specific prompt templates → Validate schemas with Pydantic v2 → Evaluate quality with a GPT-4o judge across 6 failure modes → Analyze failure patterns → Improve templates → Re-generate → Correct remaining failures → Re-evaluate.
+
+The loop matters because it creates a feedback signal. Without it, you are generating data into a void and hoping it is good enough. With it, you know exactly what is failing, why, and where to fix it.
+
+## The judge calibration problem
+
+When I first ran the evaluation pipeline: zero failures. The GPT-4o judge passed every single record across all 6 failure modes. Every question was complete, every answer was safe, every tool list was realistic.
+
+I knew that was wrong. Manual inspection revealed real issues. Electrical repair guides that did not mention turning off the circuit breaker as step 1. Beginner-level tasks requiring specialty tools like multimeters and torque wrenches. The data had genuine problems. The judge just could not see them.
+
+The root cause: GPT-4o's RLHF training biases it toward positive assessments. Without explicit strictness cues, the model defaults to being helpful and agreeable. That makes it a terrible evaluator.
+
+I considered four approaches to fix this:
+
+**Option 1: Strict prompt with concrete criteria.** Rewrite the judge prompt with explicit calibration levers. Requires domain expertise to write good criteria, but produces reproducible, actionable results.
+
+**Option 2: Keep the lenient prompt.** Simple and produces few failures. But a 0% failure rate is diagnostically useless. It defeats the entire purpose of evaluation.
+
+**Option 3: Multi-turn judge (ask, then challenge).** Could catch edge cases through adversarial follow-up. But at 2× API cost and significant orchestration complexity, diminishing returns on 30 records.
+
+**Option 4: Temperature tuning.** Lower temperature = stricter? No. Temperature controls randomness, not strictness. This is a fundamental misunderstanding of the parameter — one I have seen in production ML teams.
+
+I went with Option 1.
+
+## Three levers that moved the judge from 0% to 20%
+
+The calibration required three simultaneous changes to the judge prompt. Any one alone was not enough.
+
+**Lever 1: Identity priming.** The original prompt said "quality evaluator." The calibrated version says "STRICT quality evaluator" and adds "Your job is to find deficiencies." This is not cosmetic. Identity framing measurably shifts LLM behavior. The model adopts the critical stance the identity implies.
+
+**Lever 2: Concrete criteria replacing vague definitions.** This was the highest-impact change. Here is what it looked like in practice:
+
+- `safety_violations` went from "Missing safety info" to an explicit checklist: power-off verification, PPE requirements, professional referral thresholds, and hazard callouts. Vague became pass/fail.
+- `unrealistic_tools` went from "Tools a homeowner would not have" to named examples (multimeter, torque wrench), plus a heuristic: "fail if the tool list is suspiciously short for the task complexity."
+- `overcomplicated_solution` went from "Too complex" to hard numeric limits: beginner tasks ≤8 steps, intermediate ≤12. Subjectivity eliminated.
+
+The pattern: every criterion that relied on the judge's "judgment" was replaced with something checkable. The judge does not need to decide if a tool list is realistic. It checks against a concrete reference.
+
+**Lever 3: Distribution anchoring.** I added two phrases: "Most guides are 3-4 quality" and "Most records have at least 1-2 issues." Without these, the judge's scores clustered at 4-5 out of 5. With anchoring, the distribution shifted to a realistic 3-4 range. This combats the positivity bias directly. It normalizes the act of finding failures.
+
+An additional anti-rationalization clause ("Only give 0 when genuinely strong") blocked the judge's tendency to talk itself into passing borderline cases.
+
+The result: 0% to 20% failure rate. 36 failures across 180 evaluations (30 records × 6 failure modes). Not randomly distributed. The failures concentrated in `incomplete_answer` (50% of failures) and `poor_quality_tips` (43%). That concentration is the signal that makes the loop work.
+
+## Validating the judge
+
+A 20% failure rate means nothing if the judge is wrong. I ran a dual-labeling validation: I manually labeled 10 records across all 6 failure modes (60 binary comparisons), then compared against the LLM judge's labels.
+
+81.7% raw agreement. The range tells an interesting story: `overcomplicated_solution` and `missing_context` hit 100% agreement, because the numeric thresholds made these nearly deterministic. `poor_quality_tips` was lowest at 60%, the most subjective criterion even after calibration. This maps to intuition: the more concrete the criterion, the more reliable the judge.
+
+I acknowledge a gap here: I did not compute Cohen's Kappa (which accounts for chance agreement). With 81.7% on strict binary labels, concordance is well above chance, but the formal statistical validation is a future improvement. Shipping with a known limitation documented is more honest than pretending the gap does not exist.
+
+## The 36 to 8 to 0 result
+
+With a calibrated judge producing actionable failure signals, the correction phase had two strategies:
+
+**Strategy 1: Upstream template improvement (V1 to V2).** I analyzed the failure heatmap and found that `incomplete_answer` and `poor_quality_tips` concentrated in plumbing and HVAC categories. Notably, `electrical_repair` had zero failures. Its template was already specific enough, with explicit safety checklists and step-by-step structure. This was the evidence: template specificity directly correlates with output quality.
+
+I rewrote the plumbing and HVAC templates to match the specificity level of the electrical template, adding explicit structural requirements, minimum detail thresholds, and domain-specific quality markers.
+
+Result: 36 to 8 failures. 78% reduction from template changes alone.
+
+**Strategy 2: Downstream record correction.** For the remaining 8 failures, I ran a targeted correction pass: a second LLM call with the specific failure reason and the record to fix.
+
+Result: 8 to 0. 100% of remaining failures resolved.
+
+<MetricsGrid>
+  <MetricCard label="Records Generated" value="30" />
+  <MetricCard label="V1 Failure Rate" value="20.0%" />
+  <MetricCard label="V2 Failure Rate" value="4.4%" />
+  <MetricCard label="Final Rate" value="0.0%" />
+  <MetricCard label="Upstream Fix Impact" value="−78%" />
+  <MetricCard label="Judge Agreement" value="81.7%" />
+</MetricsGrid>
+
+Upstream fixes outperform downstream patches. Template improvement eliminated 78% of failures at the source. Individual record correction, while effective for the remaining cases, only achieves local fixes. It does not prevent the same failure pattern in future generations. If you can fix the factory, do not just fix the products.
+
+This is the same principle behind shifting testing left in CI/CD, or fixing linter rules instead of manually correcting code review findings. The leverage is always higher at the source.
+
+## Engineering practices
+
+The pipeline is not just a script. It is built with practices I would expect in any production system:
+
+**Pydantic v2 as a first-pass filter.** Every generated record passes through Pydantic validation before reaching the judge. Field validators enforce minimum lengths, pattern matching catches structural issues, and type checking eliminates malformed outputs. This creates a two-stage quality gate: structural correctness (Pydantic) → semantic quality (LLM judge). The judge never wastes tokens evaluating records that are structurally broken.
+
+**Instructor for structured generation.** I used the Instructor library to wrap OpenAI calls with Pydantic response models. When the LLM returns invalid JSON, Instructor automatically retries with the validation error as feedback. Result: 100% generation success rate with zero manual JSON parsing. This is documented in ADR-001 — the decision was Instructor over raw OpenAI calls, and the auto-retry on validation failure was the deciding factor.
+
+**MD5-keyed caching.** Every LLM call is cached by an MD5 hash of the prompt. During development, when I was iterating on judge prompts and template variations, this prevented redundant API calls. The cache saved roughly 40% of API costs during the calibration phase.
+
+**Four Architecture Decision Records.** Every major technical choice is documented with context, alternatives considered, and rationale: Instructor over raw OpenAI, flat schema over nested models, judge prompt calibration strategy, template improvement vs correction approach. These are not afterthoughts; they were written during the build as decisions were made.
+
+## What I would do differently
+
+**Compute Cohen's Kappa.** The 81.7% raw agreement is encouraging, but without a chance-corrected metric, the statistical rigor is incomplete. For a 30-record pipeline this is acceptable; for production at scale, it is not.
+
+**Test more failure modes.** Six binary failure modes cover the obvious quality dimensions. But I did not test for factual accuracy of the DIY repair advice itself — that would require domain expert review or a more sophisticated verification pipeline. The current system validates structure and completeness, not correctness.
+
+**Automate the template improvement step.** Currently, analyzing the failure heatmap and rewriting templates is manual. A meta-agent that reads failure patterns and proposes template edits would close the loop fully. This pattern shows up again in P7 (Feedback Intelligence Agent) — the idea of agents that analyze their own output quality and self-improve.
+
+## The pattern that transfers
+
+Strip away the domain and what remains is reusable:
+
+1. Generate with structured output (Pydantic + Instructor)
+2. Evaluate with a calibrated LLM judge (identity priming + concrete criteria + distribution anchoring)
+3. Analyze failure patterns to find clusters (they always cluster)
+4. Fix upstream first (templates, prompts, system instructions)
+5. Correct downstream for residual failures
+6. Validate the judge itself (dual labeling, agreement metrics)
+
+This pattern applies to synthetic training data, content generation pipelines, automated report writing, chatbot response quality. Anywhere an LLM's output needs to meet a quality bar and you cannot manually review every record.
+
+## Next in the series
+
+The next post covers P2: RAG Evaluation. I tested 16 configurations across chunking strategies, embedding models, and reranking. The most surprising finding was not which config won. It was that a faithfulness score of 0.511 means the LLM is hallucinating almost half the time even when the retriever finds the right chunks.
+
+All code for P1 is open source at [github.com/rubsj/ai-portfolio](https://github.com/rubsj/ai-portfolio).
+
+Previous in the series: [Building 9 AI Projects (While Working Full-Time)](/blog/building-9-ai-projects)
