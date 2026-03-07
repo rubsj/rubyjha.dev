@@ -1,6 +1,5 @@
 ---
 import CallToAction from '~/components/widgets/CallToAction.astro';
-import Features2 from '~/components/widgets/Features2.astro';
 import CareerTimeline from '~/components/CareerTimeline.astro';
 import Layout from '~/layouts/PageLayout.astro';
 import PersonJsonLd from '~/components/common/PersonJsonLd.astro';
@@ -8,7 +7,7 @@ import PersonJsonLd from '~/components/common/PersonJsonLd.astro';
 const metadata = {
   title: 'About',
   description:
-    'Engineering Manager and AI Systems Builder with 20+ years of enterprise experience. Building production-grade AI systems while leading global engineering teams.',
+    'Engineering Manager with 20+ years in enterprise products. Now building 9 production AI systems covering RAG, fine-tuning, and multi-agent orchestration.',
   openGraph: {
     images: [{ url: new URL('/og/about.png', Astro.site).toString(), width: 1200, height: 630 }],
   },
@@ -24,10 +23,7 @@ const metadata = {
       <p class="text-sm font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-3">About Me</p>
       <h1 class="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4">Ruby Jha</h1>
       <p class="text-xl md:text-2xl text-slate-600 dark:text-slate-300 font-medium">
-        Engineering Manager | AI Systems Builder
-      </p>
-      <p class="mt-4 text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
-        I build AI systems and the teams that ship them.
+        Engineering Manager who builds. AI systems, enterprise products, and the teams that ship them.
       </p>
     </div>
   </section>
@@ -37,33 +33,28 @@ const metadata = {
     <div class="max-w-3xl mx-auto">
       <div class="prose prose-lg dark:prose-invert max-w-none space-y-6 text-slate-700 dark:text-slate-300">
         <p>
-          I'm an Engineering Manager who still writes code. With 20+ years building enterprise platforms across
-          Financial Services and Healthcare, I'm now doing something different: building production-grade AI systems
-          while continuing to lead engineering teams. I sit at the intersection of traditional engineering leadership
-          and applied AI — and that's exactly where I want to be.
+          I have spent 20 years building enterprise products in Financial Services and Healthcare. Led teams, shipped
+          products, dealt with the kind of regulatory scrutiny where mistakes cost real money. Now I am building AI
+          systems myself, not just managing teams that do.
         </p>
         <p>
-          My track record speaks in numbers. At State Street, I owned platform strategy for a Self-Service Portal
-          serving 40+ enterprise customers across 7 global regions — US, Canada, UK, EMEA, Australia, Singapore, and
-          Japan. That work drove $250K/month in sustained operational cost savings and a 60% reduction in support
-          demand. At Centene, I led modernization of a healthcare platform covering approximately 44 million lives. At
-          EY, I managed a 12-engineer cross-functional organization spanning US, India, and Poland with zero
-          non-compliance findings across CMMI Level 3 audits.
+          At State Street, I own product strategy for a cloud-native Self-Service Portal used by 40+ enterprise
+          customers across 7 global regions. That product cut operational costs by $250K per month and reduced support
+          volume by 60%. At Centene, I led modernization of a healthcare product covering 44 million lives. At EY, I led
+          a 12-engineer team building an insurance product that modernized legacy systems for Tier-1 insurers, while
+          establishing the processes that earned EY its CMMi Level 3 certification.
         </p>
         <p>
-          In 2025, I made a deliberate pivot: instead of just managing teams that build AI systems, I started building
-          them myself. I'm now working through a portfolio of 9 production-grade AI projects spanning the full applied
-          AI stack — synthetic data generation, RAG evaluation frameworks, LLM fine-tuning pipelines, multi-agent
-          orchestration with CrewAI, and production RAG pipelines with Cohere reranking. The stack: Python, OpenAI,
-          LangChain, ChromaDB, RAGAS, Braintrust, FastAPI. I'm not a tourist in AI. I'm a practitioner building real
-          systems with real evaluation metrics.
+          In 2025, I started building AI systems alongside my day job. Not courses or tutorials. Actual systems. I am
+          working through 9 projects that cover the full applied AI stack: synthetic data generation, RAG evaluation,
+          LLM fine-tuning, multi-agent orchestration, and production RAG pipelines. Python, OpenAI, LangChain, CrewAI,
+          ChromaDB, FastAPI. Each project has evaluation metrics, architecture decision records, and documented
+          tradeoffs.
         </p>
         <p>
-          I'm looking for my next role as an Engineering Manager or AI Engineering Leader at a company pushing the
-          frontier of applied AI. What I bring is rare: enterprise engineering credibility earned in regulated,
-          high-stakes environments combined with hands-on capability to architect and build AI systems from scratch.
-          I've led global teams through complex platform modernizations, and I'm now building the AI literacy to lead
-          teams doing the same with LLMs and agents.
+          I am looking for an Engineering Manager or AI Engineering Leader role at a company doing serious work in
+          applied AI. I have led global teams through complex product builds in regulated environments. Now I am adding
+          hands-on AI depth to that foundation. If that combination is what your team needs, let's talk.
         </p>
       </div>
     </div>
@@ -76,27 +67,6 @@ const metadata = {
       <CareerTimeline />
     </div>
   </section>
-
-  <!-- Current Focus Areas -->
-  <Features2
-    title="Current Focus Areas"
-    tagline="What I'm Building"
-    columns={2}
-    items={[
-      {
-        title: 'Applied AI Systems',
-        description:
-          'Building 9 production-grade AI projects: RAG pipelines with evaluation frameworks, LLM fine-tuning with Braintrust, multi-agent orchestration with CrewAI, and synthetic data generation. Every project has real metrics, real architecture decisions, and honest tradeoffs.',
-        icon: 'tabler:brain',
-      },
-      {
-        title: 'Engineering Leadership',
-        description:
-          'Engineering Manager with 7+ years of direct people management. Scaled global teams across US, India, and Poland. Delivered platform transformations in Banking, Healthcare, and Financial Services. Now bridging traditional engineering leadership with applied AI.',
-        icon: 'tabler:users',
-      },
-    ]}
-  />
 
   <!-- Contact & Resume -->
   <CallToAction
@@ -117,19 +87,18 @@ const metadata = {
       },
     ]}
   >
-    <Fragment slot="title">Get in Touch</Fragment>
+    <Fragment slot="title">Best way to reach me</Fragment>
     <Fragment slot="subtitle">
-      Open to Engineering Manager and AI Engineering Leader roles. Reach me at{' '}
       <a href="mailto:rubyjha.jnv@gmail.com" class="text-primary dark:text-indigo-400 hover:underline"
         >rubyjha.jnv@gmail.com</a
       >
-      {' '}or find me on{' '}
+      {' '}·{' '}
       <a
         href="https://github.com/rubsj"
         target="_blank"
         rel="noopener noreferrer"
         class="text-primary dark:text-indigo-400 hover:underline">GitHub</a
-      >.
+      >
     </Fragment>
   </CallToAction>
   <PersonJsonLd />
