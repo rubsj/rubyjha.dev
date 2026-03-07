@@ -17,9 +17,6 @@ metadata:
   description: 'Why I am building 9 AI systems from scratch while working full-time as an Engineering Manager. The portfolio, the progression, and what I have learned so far.'
 ---
 
-import MetricCard from '~/components/mdx/MetricCard.astro';
-import MetricsGrid from '~/components/mdx/MetricsGrid.astro';
-
 ## The reason
 
 I have spent 20 years building through every major shift in enterprise software. Mainframe to client-server, on-prem to cloud, monolith to microservices. Each shift changed what engineering leaders needed to know. The current shift to AI is no different, except it is happening faster.
@@ -34,31 +31,9 @@ The 9 projects follow a deliberate progression through the applied AI stack:
 2. **Evaluation** (P2): Multi-strategy RAG evaluation comparing 15 vector configurations across chunking, embeddings, and reranking
 3. **Fine-Tuning** (P3): Contrastive embedding fine-tuning: standard vs LoRA, head-to-head with comprehensive metrics
 4. **Applied RAG** (P4-P5): AI Resume Coach and a production RAG pipeline with hybrid search and FastAPI endpoints
-5. **Multi-Agent Systems** (P6-P9): Feedback intelligence, sprint planning, digital clone, and DevOps RCA. All using CrewAI orchestration.
+5. **Multi-Agent Systems** (P6-P9): Digital clone, feedback intelligence, Jira sprint planning, and DevOps RCA. All using CrewAI orchestration.
 
 Each project builds on the previous. P1 generates data that could train models evaluated by P2's framework. P3's fine-tuned embeddings feed into P5's production pipeline. P6-P9 all use multi-agent patterns that emerge naturally once you understand the single-agent limitations from P4-P5.
-
-## What is done so far
-
-Three projects are complete. Here are the real numbers:
-
-<MetricsGrid>
-  <MetricCard label="P1: Generation Success" value="100%" />
-  <MetricCard label="P1: Correction Improvement" value="78%" />
-  <MetricCard label="P1: Build Hours" value="14" />
-  <MetricCard label="P2: Best Recall@5" value="0.747" />
-  <MetricCard label="P2: vs BM25 Baseline" value="+96%" />
-  <MetricCard label="P2: Test Coverage" value="95%" />
-  <MetricCard label="P3: LoRA vs Standard" value="96.9%" />
-  <MetricCard label="P3: Trainable Params" value="0.32%" />
-  <MetricCard label="P3: Model Size Reduction" value="309x" />
-</MetricsGrid>
-
-**P1: Synthetic Data Generation** took 14 hours. The pipeline generates schema-driven records using GPT-4o-mini, then validates them with a GPT-4o LLM-as-Judge. The interesting finding was not the 100% generation success rate. It was calibrating the judge. My first judge prompt approved everything (useless). After four iterations, I hit a 20% failure rate that matched my manual assessment. The correction loop then reduced failures by 78%.
-
-**P2: RAG Evaluation Pipeline** took 19 hours. I tested 15 vector configurations. Every combination of chunking strategy, embedding model, and reranking. The best config (semantic chunking + OpenAI embeddings + Cohere reranking) hit Recall@5 of 0.747, beating the BM25 keyword baseline by 96%. But the most important finding was a faithfulness score of only 0.511. The LLM hallucinated almost half the time even when the retriever found the right chunks. Good retrieval is necessary but not sufficient. The project ships with 557 tests at 95% coverage.
-
-**P3: Contrastive Embedding Fine-Tuning** took 12 hours. I ran a head-to-head comparison: standard fine-tuning (all 22.7M parameters) vs LoRA (73K parameters, 0.32% of the model). LoRA achieved 96.9% of standard performance with a 309x smaller model. The hidden lesson: LoRA needs a 10x higher learning rate than standard fine-tuning. My first attempt with the default learning rate produced garbage. I would have wrongly concluded LoRA does not work for sentence transformers.
 
 ## What separates these from tutorials
 
@@ -70,8 +45,10 @@ The easiest way to spot a tutorial project: ask "what happens when it fails?" Th
 
 rubyjha.dev is built with Astro 5.0, deployed on Cloudflare Pages, with content in MDX and custom components for metrics and architecture diagrams. Eventually it will include a RAG chatbot that answers questions about my work using these blog posts and project writeups as its knowledge base.
 
-## What comes next
+## The series
 
-This is post #1 in the series. Each completed project gets a deep-dive post with architecture diagrams, real metrics, and the decisions that shaped the system, including the ones that did not work on the first try.
+This is post #1 in a 10-part series. Each project gets its own deep-dive with architecture diagrams, real metrics, and the decisions that shaped the system, including the ones that did not work on the first try.
+
+Next up: how I built an LLM-as-Judge that went from approving everything to catching real failures, and why calibrating the judge turned out to be harder than building the generator.
 
 All code is open source at [github.com/rubsj/ai-portfolio](https://github.com/rubsj/ai-portfolio).
