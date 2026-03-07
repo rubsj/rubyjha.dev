@@ -1,6 +1,6 @@
 ---
 title: 'DevOps Root-Cause Analysis Assistant'
-description: 'Multi-agent DevOps assistant for root-cause analysis — agents ingest logs, metrics, and alerts to diagnose production incidents with structured orchestration.'
+description: 'Multi-agent DevOps assistant that monitors CI/CD pipelines, correlates logs and metrics, diagnoses root causes, and suggests remediations with risk-based approval workflows. Built with CrewAI.'
 projectNumber: 9
 status: 'planned'
 tags: ['multi-agent', 'crewai', 'devops-ai']
@@ -10,6 +10,10 @@ featured: false
 publishDate: 2026-02-22
 ---
 
-Production incidents are diagnosed through a mental model built from logs, metrics, alerts, recent deployments, and institutional memory. This project codifies that model as a multi-agent CrewAI system: a log analysis agent identifies anomaly patterns and error spikes; a metrics agent correlates CPU, memory, and latency curves against the incident timeline; an alert agent maps triggered alerts to known failure signatures; and an RCA synthesis agent produces a structured diagnosis with confidence levels and recommended remediation steps.
+When a production incident hits, the on-call engineer is context-switching between CloudWatch logs, Datadog metrics, GitHub Actions runs, and Slack threads. They are building a mental model of what went wrong by correlating signals across systems. That process is slow, stressful, and depends entirely on who happens to be on call.
 
-The system is designed for the first 15 minutes of an incident — the highest-stress, highest-stakes window where having a structured hypothesis quickly reduces mean time to resolution. The output is a structured incident report with ranked hypotheses, supporting evidence from each data source, and suggested next diagnostic steps for the on-call engineer to validate.
+This project builds a multi-agent system that does the correlation automatically. Five CrewAI agents handle distinct jobs: pipeline monitoring (GitHub Actions, Jenkins), log analysis (CloudWatch, Elasticsearch, Datadog), error classification into a 13-category taxonomy, LLM-powered root cause diagnosis, and remediation suggestions with CLI commands for Kubernetes, Docker, and AWS.
+
+The part that makes this more than a log aggregator is the remediation layer. Actions have risk levels (low, medium, high) and an approval workflow. Cache clears auto-execute in dev. Service restarts need approval in production. Rollbacks always need a human. The system learns from resolved incidents and builds a knowledge base of error signatures and runbook entries over time.
+
+The goal is to cut mean time to resolution by giving the on-call engineer a structured hypothesis within 30 seconds instead of 15 minutes of manual investigation.
