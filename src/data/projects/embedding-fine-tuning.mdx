@@ -31,27 +31,20 @@ I needed to fix the embedding space and compare two approaches: full fine-tuning
 ## Architecture
 
 <MermaidDiagram
-  chart={`graph TD
-  A[Training Data: Sentence Pairs] --> B[Base: all-MiniLM-L6-v2]
-  B --> C[Standard Fine-Tuning]
-  B --> D[LoRA Fine-Tuning]
-  C --> E[22.7M Parameters / 86.65 MB]
-  D --> F[73K Parameters / 0.28 MB]
-  E --> G[Evaluation Suite]
-  F --> G
-  G --> H[Spearman Correlation]
-  G --> I[AUC-ROC]
-  G --> J[Cohen's d Effect Size]
-  H --> K[UMAP Visualization]
-  I --> K
-  K --> L[Interactive HTML Report]`}
+  chart={`flowchart LR
+    A[1475 Training Pairs] --> B[all-MiniLM-L6-v2]
+    B --> C[Standard / 22.7M params]
+    B --> D[LoRA / 73K params]
+    C --> E[8-Metric Eval]
+    D --> E
+    E --> F[HTML Report / 8 Charts]`}
 />
 
 Both approaches start from the same base model and train on identical sentence pairs using CosineSimilarityLoss. Standard fine-tuning updates all 22.7M parameters (86.7 MB model). LoRA injects rank-8 adapters on query/value layers, training only 73K parameters (0.28 MB adapter file). Evaluation uses 8 metrics so no single metric can mask a failure. Everything renders into a self-contained HTML comparison report.
 
 ## Key Results
 
-Baseline was inverted: Spearman -0.219, AUC-ROC 0.373, similarity margin -0.083. The model rated dissimilar sentences as more similar than similar ones.
+Baseline was inverted. Spearman -0.219. AUC-ROC 0.373. Similarity margin -0.083. The model rated dissimilar sentences as more similar than similar ones.
 
 Standard fine-tuning fixed it: Spearman 0.853, AUC-ROC 0.994, margin flipped to +0.940. False positives dropped from 137 to 3.
 
