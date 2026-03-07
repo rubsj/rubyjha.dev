@@ -21,8 +21,6 @@ featured: true
 publishDate: 2026-02-17
 ---
 
-import MetricCard from '~/components/mdx/MetricCard.astro';
-import MetricsGrid from '~/components/mdx/MetricsGrid.astro';
 import MermaidDiagram from '~/components/mdx/MermaidDiagram.astro';
 
 ## The Problem
@@ -34,50 +32,33 @@ I wanted actual numbers. So I built a framework that tests every combination of 
 ## Architecture
 
 <MermaidDiagram
-  chart={`graph TB
-  A[3 Markdown Documents] --> B[Parser]
-  B --> C[Chunking: 5 strategies]
-  C --> D[Embedding: 3 models]
-  C --> BM25[BM25 Baseline]
-  D --> F[FAISS IndexFlatIP]
-  F --> G["56 Synthetic QA pairs"]
-  BM25 --> G
-
-  G --> H1[Layer 1: Retrieval Metrics]
-  H1 --> H2[Layer 2: BM25 Comparison]
-  H2 --> H3[Layer 3: Cohere Reranking]
-  H3 --> H4[Layer 4: RAGAS Generation Quality]
-  H4 --> H5[Layer 5: LLM Judge]
-
-  H5 --> I[Braintrust Experiments]
-  H5 --> J[12 Visualizations]
-  H5 --> K[GridSearchReport.json]`}
+  chart={`flowchart LR
+  D[3 Markdown Docs] --> C[5 Chunking Strategies]
+  C --> E[3 Embedding Models]
+  C --> BM[BM25 Baseline]
+  E --> F[FAISS Index]
+  F --> Q[56 QA Pairs]
+  BM --> Q
+  Q --> R[Retrieval Metrics]
+  R --> RR[Cohere Reranking]
+  RR --> RA[RAGAS Quality]
+  RA --> J[LLM Judge]
+  J --> B[Braintrust]`}
 />
 
 16 configs come from crossing 5 chunking strategies with 3 embedding models, plus a BM25 baseline. Each config gets its own FAISS index. All 16 are evaluated against the same 56 synthetic QA pairs so comparisons are apples-to-apples. Every result is logged to Braintrust for reproducibility.
 
 ## Key Results
 
-<MetricsGrid>
-  <MetricCard label="Best Recall@5" value="0.747" />
-  <MetricCard label="vs BM25 Baseline" value="+96%" />
-  <MetricCard label="Configs Tested" value="15" />
-  <MetricCard label="Test Coverage" value="95%" />
-  <MetricCard label="Tests Written" value="557" />
-  <MetricCard label="Total Hours" value="19" />
-</MetricsGrid>
-
 Best config: semantic chunking with OpenAI embeddings ("E-openai"). 0.625 Recall@5 without reranking, 0.747 with Cohere reranking (+19.5%). BM25 keyword baseline managed 0.381.
-
-Here is what the data showed:
 
 **Overlap is overrated.** 50% overlap underperformed 25% overlap by 13%. Redundant chunks dilute the top-k instead of helping it. 10-25% is enough to prevent boundary fragmentation.
 
-**Embedding training data matters more than dimensionality.** MPnet (768d) performed no better than MiniLM (384d). OpenAI (1536d) beat both by 26%. If the gap were about dimensions, MPnet should sit between the two. It doesn't. This is OpenAI's supervised training data doing the work.
+**Embedding training data matters more than dimensionality.** MPnet (768d) performed no better than MiniLM (384d). OpenAI (1536d) beat both by 26%. If the gap were about dimensions, MPnet should sit between the two. It does not. This is OpenAI's supervised training data doing the work.
 
 **Reranking is the cheapest win.** ~20% average lift for $0.05 per 168 reranks. The weakest configs got the biggest lift, which suggests reranking partially compensates for bad chunking or weak embeddings.
 
-**Always manually sample your LLM judge.** The judge flagged 73% hallucination, but 22 of 41 flagged responses were the model refusing to answer ("I don't have enough context"). That is a prompt calibration issue, not a hallucination problem.
+**Always manually sample your LLM judge.** The judge flagged 73% hallucination, but 22 of 41 flagged responses were the model refusing to answer ("I do not have enough context"). That is a prompt calibration issue, not a hallucination problem.
 
 **Retrieval quality does not guarantee generation quality.** Best retrieval config scored 0.747 Recall@5 but only 0.511 faithfulness. The LLM generated answers that were not grounded in the retrieved context almost half the time. Good retrieval is necessary but not sufficient.
 
@@ -85,7 +66,7 @@ Here is what the data showed:
 
 **FAISS over ChromaDB.** Under 1,000 vectors, brute-force exact search is the correct choice. No server dependency, no approximate search, deterministic results. Eliminates a variable in evaluation.
 
-**Semantic chunking validated by grid search.** I did not assume semantic chunking would win. Tested it head-to-head against fixed-size chunking across every embedding model. The 3-22% improvement was consistent. The grid search approach is the point: measure, don't guess.
+**Semantic chunking validated by grid search.** I did not assume semantic chunking would win. Tested it head-to-head against fixed-size chunking across every embedding model. The 3-22% improvement was consistent. The grid search approach is the point: measure, do not guess.
 
 **OpenAI embeddings win on cost-quality.** $0.02 per million tokens. Beats local sentence-transformer models by 26% on retrieval quality. Unless you are processing millions of documents, the API cost is negligible compared to the quality gap.
 
