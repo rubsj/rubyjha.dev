@@ -1,7 +1,7 @@
 ---
 title: 'Feedback Intelligence Agent'
-description: 'Multi-agent system using CrewAI for analyzing customer feedback at scale — specialized agents for categorization, sentiment analysis, and actionable insights.'
-projectNumber: 6
+description: 'Multi-agent system that helps Product Managers go from raw customer feedback to prioritized roadmap gaps. CrewAI agents handle sentiment scoring, theme extraction, roadmap alignment, and gap detection.'
+projectNumber: 7
 status: 'planned'
 tags: ['multi-agent', 'crewai']
 techStack: ['Python', 'CrewAI', 'OpenAI', 'LangChain']
@@ -10,6 +10,8 @@ featured: false
 publishDate: 2026-02-22
 ---
 
-Customer feedback is high-signal and chronically underanalyzed. This project builds a multi-agent CrewAI system where specialized agents handle distinct stages of the analysis pipeline: a categorization agent that routes feedback to product, UX, performance, or support buckets; a sentiment agent that distinguishes frustration intensity from feature requests; and a synthesis agent that produces prioritized action items grouped by theme and impact.
+Product Managers are drowning in feedback from support tickets, chat, GitHub issues, and app reviews. Reading through hundreds of items manually does not scale. Even when they do, it is hard to quantify which issues hurt most, which themes keep recurring, and whether the roadmap actually addresses the pain.
 
-The multi-agent approach is deliberate — each agent operates with a narrow, well-defined prompt that reduces hallucination compared to a single general-purpose agent processing raw feedback. The system is designed to handle batches of 100+ feedback items and produce structured JSON output suitable for feeding into product planning tools.
+This project builds a multi-agent pipeline using CrewAI. Specialized agents handle distinct stages: a sentiment agent that scores pain intensity on a 0-10 scale (because sentiment and pain are not the same thing), a theme agent that clusters feedback into actionable groups, a mapping agent that aligns themes to roadmap items using embedding similarity, and a gap agent that flags high-pain themes with no roadmap coverage.
+
+The output is a prioritized list of gaps with LLM-generated recommendations. The kind of report a PM can take into a planning meeting and use to make decisions about what to build next.
