@@ -11,6 +11,7 @@ import icon from 'astro-icon';
 import compress from 'astro-compress';
 import type { AstroIntegration } from 'astro';
 
+import pagefind from 'astro-pagefind';
 import astrowind from './vendor/integration';
 
 import { readingTimeRemarkPlugin, responsiveTablesRehypePlugin, lazyImagesRehypePlugin } from './src/utils/frontmatter';
@@ -26,6 +27,7 @@ export default defineConfig({
   output: 'static',
 
   integrations: [
+    pagefind(),
     tailwind({
       applyBaseStyles: false,
     }),

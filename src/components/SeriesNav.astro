@@ -1,0 +1,88 @@
+---
+import { fetchPosts } from '~/utils/blog';
+import type { Post } from '~/types';
+
+export interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+
+const series = post.series;
+const seriesOrder = post.seriesOrder;
+
+let prevPost: Post | undefined;
+let nextPost: Post | undefined;
+let seriesTitle = '';
+let totalParts = 0;
+
+if (series && seriesOrder) {
+  const allPosts = await fetchPosts();
+  const seriesPosts = allPosts
+    .filter((p) => p.series === series)
+    .sort((a, b) => (a.seriesOrder || 0) - (b.seriesOrder || 0));
+
+  totalParts = seriesPosts.length;
+
+  const currentIndex = seriesPosts.findIndex((p) => p.slug === post.slug);
+  if (currentIndex > 0) {
+    prevPost = seriesPosts[currentIndex - 1];
+  }
+  if (currentIndex < seriesPosts.length - 1) {
+    nextPost = seriesPosts[currentIndex + 1];
+  }
+
+  seriesTitle = series
+    .split('-')
+    .map((word) => (word.length <= 2 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)))
+    .join(' ');
+}
+---
+
+{
+  series && seriesOrder ? (
+    <div class="mx-auto px-6 sm:px-6 max-w-3xl py-4">
+      <nav
+        class="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 p-4"
+        aria-label="Series navigation"
+      >
+        <div class="flex items-center justify-between mb-2">
+          <a href={`/series/${series}`} class="text-sm font-semibold text-primary dark:text-blue-400 hover:underline">
+            {seriesTitle}
+          </a>
+          <span class="text-sm text-muted dark:text-slate-400">
+            Part {seriesOrder} of {totalParts}
+          </span>
+        </div>
+        <div class="flex justify-between items-center gap-4">
+          <div class="flex-1 min-w-0">
+            {prevPost ? (
+              <a
+                href={`/${prevPost.permalink}`}
+                class="flex items-center text-sm text-muted dark:text-slate-400 hover:text-primary dark:hover:text-blue-400 transition-colors"
+              >
+                <span class="mr-1">&larr;</span>
+                <span class="truncate">{prevPost.title}</span>
+              </a>
+            ) : (
+              <span />
+            )}
+          </div>
+          <div class="flex-1 min-w-0 text-right">
+            {nextPost ? (
+              <a
+                href={`/${nextPost.permalink}`}
+                class="flex items-center justify-end text-sm text-muted dark:text-slate-400 hover:text-primary dark:hover:text-blue-400 transition-colors"
+              >
+                <span class="truncate">{nextPost.title}</span>
+                <span class="ml-1">&rarr;</span>
+              </a>
+            ) : (
+              <span />
+            )}
+          </div>
+        </div>
+      </nav>
+    </div>
+  ) : null
+}

@@ -8,6 +8,7 @@ import SinglePost from '~/components/blog/SinglePost.astro';
 import ToBlogLink from '~/components/blog/ToBlogLink.astro';
 import AuthorCard from '~/components/blog/AuthorCard.astro';
 import BlogPostingJsonLd from '~/components/common/BlogPostingJsonLd.astro';
+import SeriesNav from '~/components/SeriesNav.astro';
 
 import { getCanonical, getPermalink } from '~/utils/permalinks';
 import { getStaticPathsBlogPost, blogPostRobots } from '~/utils/blog';
@@ -47,9 +48,11 @@ const metadata = merge(
 ---
 
 <Layout metadata={metadata}>
+  <SeriesNav post={post} />
   <SinglePost post={{ ...post, image: image }} url={url}>
     {post.Content ? <post.Content /> : <Fragment set:html={post.content || ''} />}
   </SinglePost>
+  <SeriesNav post={post} />
   <AuthorCard name={post.author || 'Ruby Jha'} />
   <ToBlogLink />
   <RelatedPosts post={post} />

@@ -1,0 +1,85 @@
+name: Validate Blog Content
+
+on:
+  pull_request:
+    paths:
+      - 'src/data/post/**'
+
+jobs:
+  validate-tags:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate blog tags against tags.json
+        run: |
+          set -euo pipefail
+
+          # Load allowed tags
+          ALLOWED_TAGS=$(cat tags.json | tr -d '[]"' | tr ',' '\n' | xargs)
+          ERRORS=""
+
+          # Get changed MDX/MD files in this PR
+          CHANGED_FILES=$(git diff --name-only --diff-filter=ACMR origin/${{ github.base_ref }}...HEAD -- 'src/data/post/*.mdx' 'src/data/post/*.md' || true)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No blog post files changed. Skipping validation."
+            exit 0
+          fi
+
+          for file in $CHANGED_FILES; do
+            if [ ! -f "$file" ]; then
+              continue
+            fi
+
+            # Extract frontmatter between first pair of ---
+            FRONTMATTER=$(sed -n '/^---$/,/^---$/p' "$file" | sed '1d;$d')
+
+            # Parse tags from YAML frontmatter
+            IN_TAGS=false
+            while IFS= read -r line; do
+              if echo "$line" | grep -q "^tags:"; then
+                IN_TAGS=true
+                # Handle inline array: tags: [a, b, c]
+                INLINE=$(echo "$line" | grep -oP '\[.*\]' || true)
+                if [ -n "$INLINE" ]; then
+                  TAGS=$(echo "$INLINE" | tr -d '[]' | tr ',' '\n' | xargs)
+                  for tag in $TAGS; do
+                    tag=$(echo "$tag" | tr -d "'" | tr -d '"' | xargs)
+                    if ! echo "$ALLOWED_TAGS" | grep -qw "$tag"; then
+                      ERRORS="${ERRORS}ERROR: Invalid tag '${tag}' in ${file}\n"
+                    fi
+                  done
+                  IN_TAGS=false
+                fi
+                continue
+              fi
+
+              if $IN_TAGS; then
+                if echo "$line" | grep -q "^  - "; then
+                  tag=$(echo "$line" | sed 's/^  - //' | tr -d "'" | tr -d '"' | xargs)
+                  if [ -n "$tag" ] && ! echo "$ALLOWED_TAGS" | grep -qw "$tag"; then
+                    ERRORS="${ERRORS}ERROR: Invalid tag '${tag}' in ${file}\n"
+                  fi
+                elif ! echo "$line" | grep -q "^  "; then
+                  IN_TAGS=false
+                fi
+              fi
+            done <<< "$FRONTMATTER"
+          done
+
+          if [ -n "$ERRORS" ]; then
+            echo ""
+            echo "========================================="
+            echo "TAG VALIDATION FAILED"
+            echo "========================================="
+            echo -e "$ERRORS"
+            echo ""
+            echo "Valid tags (from tags.json):"
+            echo "$ALLOWED_TAGS" | tr ' ' '\n' | sort | sed 's/^/  - /'
+            exit 1
+          fi
+
+          echo "All tags are valid."
