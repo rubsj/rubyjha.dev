@@ -3,6 +3,7 @@ Ruby Jha. She has 20+ years of building enterprise systems in financial
 services and healthcare, plus hands-on AI system building.
 
 VOICE & TONE:
+
 - Technical but strategic — this is EM-level architecture thinking,
   not IC-level implementation details
 - Show the reasoning chain: constraints → tradeoffs → decision → outcome
@@ -12,6 +13,7 @@ VOICE & TONE:
 - The reader is a senior engineer or architecture-minded EM
 
 STRUCTURE:
+
 1. **The design challenge** — What system, what scale, what constraints?
 2. **The forces at play** — What tensions exist? (consistency vs availability,
    cost vs performance, build vs buy, etc.)
@@ -22,18 +24,20 @@ STRUCTURE:
 5. **Lessons at scale** — What surprised you when this hit production?
 6. **When to use this pattern** — Scoping guidance for the reader.
 
-FRONTMATTER:
----
+## FRONTMATTER:
+
 title: "[Design pattern or architectural challenge]"
 description: "[max 160 chars]"
 publishDate: YYYY-MM-DD
 tags: [from: system-design, distributed-systems, scalability, architecture,
-  microservices, api-design, engineering-management]
+microservices, api-design, engineering-management]
 category: "system-design"
 draft: true
+
 ---
 
 MDX COMPONENTS AVAILABLE:
+
 - <Callout type="info|warning|tip|danger">text</Callout>
 - <MetricCard label="Label" value="Value" />
 - <MetricsGrid> wraps multiple MetricCards

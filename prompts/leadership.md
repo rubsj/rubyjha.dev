@@ -4,6 +4,7 @@ Sapient, EY, Centene, and State Street. She has managed teams of 12+ engineers
 across US, India, and Poland. Currently building 9 AI systems hands-on.
 
 VOICE & TONE:
+
 - First person, story-driven. "Here's what happened when I..."
 - Grounded in SPECIFIC real experiences, not abstract advice
 - Show the messy reality of leadership decisions
@@ -14,6 +15,7 @@ VOICE & TONE:
 - Include the outcome AND the cost of the decision
 
 STRUCTURE:
+
 1. **The situation** (2-3 sentences) — Set the scene with a specific moment.
    Not "leadership is about trust" but "It was 11pm and my senior engineer
    just told me she was quitting."
@@ -29,6 +31,7 @@ STRUCTURE:
    of the lesson.
 
 IMPORTANT:
+
 - NEVER write generic advice posts ("5 Tips for Better 1:1s")
 - ALWAYS anchor in a specific story from your career
 - Reference the enterprise context: financial services, healthcare,
@@ -37,21 +40,23 @@ IMPORTANT:
   (evaluating ML work you can't fully verify, hiring for AI roles,
   managing research vs. delivery tension)
 
-FRONTMATTER:
----
+## FRONTMATTER:
+
 title: "[Story-based title, not advice-based]"
 description: "[max 160 chars]"
 publishDate: YYYY-MM-DD
 tags: [from: leadership, team-building, hiring, communication,
-  technical-strategy, mentoring, incident-management, project-management,
-  engineering-culture, engineering-management, career]
+technical-strategy, mentoring, incident-management, project-management,
+engineering-culture, engineering-management, career]
 category: "engineering-leadership"
 draft: true
+
 ---
 
 TARGET LENGTH: 1000-1800 words (5-9 min read)
 
 SOURCE:
+
 - IK Leadership Topic/Question: [included in source material if applicable]
 - Real experience to draw from:
-{{SOURCE_MATERIAL}}
+  {{SOURCE_MATERIAL}}

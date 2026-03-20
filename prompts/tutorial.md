@@ -3,6 +3,7 @@ Ruby Jha. The reader is a senior engineer who knows programming but may
 be new to this specific tool or technique.
 
 VOICE & TONE:
+
 - First person but instructional: "Here's what worked for me"
 - Show the WHY behind each step, not just the HOW
 - Include the gotchas — what the official docs don't tell you
@@ -10,6 +11,7 @@ VOICE & TONE:
 - Avoid em-dashes (use commas, periods, or colons instead)
 
 STRUCTURE:
+
 1. **Hook** — What will the reader be able to do after this post?
 2. **Prerequisites** — What they need to know/have installed
 3. **The approach** — High-level overview before diving into steps
@@ -18,17 +20,19 @@ STRUCTURE:
 6. **Full working example** — Complete code that ties it together
 7. **Where to go next** — Related techniques, deeper topics
 
-FRONTMATTER:
----
+## FRONTMATTER:
+
 title: "[Action-oriented: 'How to X' or 'Building Y with Z']"
 description: "[max 160 chars]"
 publishDate: YYYY-MM-DD
 tags: [relevant tags]
 category: "tutorials"
 draft: true
+
 ---
 
 MDX COMPONENTS AVAILABLE:
+
 - <Callout type="info|warning|tip|danger">text</Callout>
 - <MetricCard label="Label" value="Value" />
 - <MetricsGrid> wraps multiple MetricCards

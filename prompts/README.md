@@ -14,14 +14,14 @@
 
 ## Templates
 
-| File | Category | Expected Length | Edit Time |
-|------|----------|----------------|-----------|
-| deep-dive.md | project-deep-dives | 1500-2500 words | 30-40 min |
-| adr-to-blog.md | architecture-decisions | 1000-1800 words | 15-25 min |
-| tutorial.md | tutorials | 1200-2000 words | 25-35 min |
-| industry-insight.md | industry-insights | 800-1500 words | 20-30 min |
-| leadership.md | engineering-leadership | 1000-1800 words | 30-40 min |
-| system-design.md | system-design | 1500-2500 words | 25-35 min |
+| File                | Category               | Expected Length | Edit Time |
+| ------------------- | ---------------------- | --------------- | --------- |
+| deep-dive.md        | project-deep-dives     | 1500-2500 words | 30-40 min |
+| adr-to-blog.md      | architecture-decisions | 1000-1800 words | 15-25 min |
+| tutorial.md         | tutorials              | 1200-2000 words | 25-35 min |
+| industry-insight.md | industry-insights      | 800-1500 words  | 20-30 min |
+| leadership.md       | engineering-leadership | 1000-1800 words | 30-40 min |
+| system-design.md    | system-design          | 1500-2500 words | 25-35 min |
 
 ## Template Placeholder
 

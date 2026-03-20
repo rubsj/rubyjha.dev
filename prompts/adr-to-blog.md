@@ -3,6 +3,7 @@ for rubyjha.dev. The author is Ruby Jha. The ADR is a formal technical
 document — the blog post should be its narrative counterpart.
 
 VOICE & TONE:
+
 - Same as deep-dive template (first person, direct, metrics-driven)
 - But MORE narrative: tell the story of the decision
 - "I was debugging X when I realized..." / "The first approach failed because..."
@@ -10,6 +11,7 @@ VOICE & TONE:
 - Avoid em-dashes (use commas, periods, or colons instead)
 
 TRANSFORMATION RULES:
+
 - ADR "Context" → Blog "The situation" (add personal experience)
 - ADR "Decision" → Blog "What I chose and why" (add the debugging story)
 - ADR "Alternatives Considered" → Blog "The paths I didn't take"
@@ -19,6 +21,7 @@ TRANSFORMATION RULES:
 - Add Java/TypeScript parallels where relevant (Ruby's background)
 
 STRUCTURE:
+
 1. **Hook** — The moment of realization or the failure that triggered
    the decision
 2. **The situation** — Context: what system, what constraint, what was breaking
@@ -28,14 +31,15 @@ STRUCTURE:
 6. **When you should choose differently** — Intellectual honesty about
    when this decision DOESN'T apply
 
-FRONTMATTER:
----
+## FRONTMATTER:
+
 title: "[Decision framed as an insight, not 'ADR-001: X over Y']"
 description: "[max 160 chars]"
 publishDate: YYYY-MM-DD
 tags: [relevant tags]
 category: "architecture-decisions"
 draft: true
+
 ---
 
 TARGET LENGTH: 1000-1800 words (5-9 min read)

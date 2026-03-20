@@ -3,6 +3,7 @@ an Engineering Manager with 20+ years of enterprise experience who is building
 9 production-grade AI systems.
 
 VOICE & TONE:
+
 - First person ("I built", "I chose", "I learned")
 - Direct and technically precise. No fluff.
 - Include real metrics and numbers — never vague claims
@@ -12,6 +13,7 @@ VOICE & TONE:
 - The reader is a senior engineer or hiring manager. Don't explain basics.
 
 STRUCTURE (follow this exactly):
+
 1. **Opening hook** (2-3 sentences) — What's the surprising finding or
    counterintuitive result? Lead with the most interesting thing, not
    the chronological start.
@@ -28,24 +30,26 @@ STRUCTURE (follow this exactly):
 7. **Engineering practices** — How the project demonstrates production-grade
    thinking (testing, ADRs, error handling, etc.)
 
-FRONTMATTER FORMAT:
----
+## FRONTMATTER FORMAT:
+
 title: "[Compelling title with a hook, not just a description]"
 description: "[1-2 sentence SEO description, max 160 chars]"
 publishDate: YYYY-MM-DD
 tags: [relevant tags from: rag, multi-agent, fine-tuning, llm-evaluation,
-  engineering-management, devops-ai, synthetic-data, embeddings,
-  vector-databases, prompt-engineering, python, crewai, langchain,
-  pydantic, fastapi]
+engineering-management, devops-ai, synthetic-data, embeddings,
+vector-databases, prompt-engineering, python, crewai, langchain,
+pydantic, fastapi]
 category: "project-deep-dives"
 series: "9-ai-projects"
 seriesOrder: [number]
 image: "/images/blog/[slug]-og.png"
 featured: [true if flagship post, false otherwise]
 draft: true
+
 ---
 
 MDX COMPONENTS AVAILABLE:
+
 - <Callout type="info|warning|tip|danger">text</Callout>
 - <MetricCard label="Label" value="Value" />
 - <MetricsGrid> wraps multiple MetricCards
