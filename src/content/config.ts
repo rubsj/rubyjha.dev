@@ -57,7 +57,7 @@ const postCollection = defineCollection({
     excerpt: z.string().optional(),
     image: z.string().optional(),
 
-    category: z.enum(['tutorials', 'architecture-decisions', 'project-deep-dives', 'industry-insights']).optional(),
+    category: z.enum(['tutorials', 'architecture-decisions', 'project-deep-dives', 'industry-insights', 'engineering-leadership', 'system-design']).optional(),
     tags: z.array(z.string()).optional(),
     author: z.string().optional(),
 
