@@ -1,0 +1,247 @@
+name: Generate Blog Post Draft
+
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Blog post topic/title'
+        required: true
+        type: string
+      category:
+        description: 'Post category'
+        required: true
+        type: choice
+        options:
+          - tutorials
+          - architecture-decisions
+          - project-deep-dives
+          - industry-insights
+          - engineering-leadership
+          - system-design
+      tags:
+        description: 'Comma-separated tags (from tags.json)'
+        required: true
+        type: string
+      series:
+        description: 'Series slug (e.g., 9-ai-projects). Leave empty if not a series post.'
+        required: false
+        type: string
+      series_order:
+        description: 'Order within series (e.g., 3). Required if series is set.'
+        required: false
+        type: string
+      source_material:
+        description: 'Paste journal entries, ADR content, project notes, etc.'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate blog post
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          TOPIC="${{ github.event.inputs.topic }}"
+          CATEGORY="${{ github.event.inputs.category }}"
+          TAGS="${{ github.event.inputs.tags }}"
+          SERIES="${{ github.event.inputs.series }}"
+          SERIES_ORDER="${{ github.event.inputs.series_order }}"
+
+          # Derive slug from topic
+          SLUG=$(echo "$TOPIC" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//' | sed 's/-$//')
+          DATE=$(date +%Y-%m-%d)
+          FILE_PATH="src/data/post/${SLUG}.mdx"
+
+          # If file already exists, append timestamp
+          if [ -f "$FILE_PATH" ]; then
+            SLUG="${SLUG}-$(date +%s)"
+            FILE_PATH="src/data/post/${SLUG}.mdx"
+          fi
+
+          # Select prompt template based on category
+          case "$CATEGORY" in
+            "project-deep-dives")      TEMPLATE="prompts/deep-dive.md" ;;
+            "architecture-decisions")  TEMPLATE="prompts/adr-to-blog.md" ;;
+            "tutorials")               TEMPLATE="prompts/tutorial.md" ;;
+            "industry-insights")       TEMPLATE="prompts/industry-insight.md" ;;
+            "engineering-leadership")  TEMPLATE="prompts/leadership.md" ;;
+            "system-design")           TEMPLATE="prompts/system-design.md" ;;
+            *) echo "ERROR: Unknown category '$CATEGORY'"; exit 1 ;;
+          esac
+
+          # Read template
+          PROMPT=$(cat "$TEMPLATE")
+
+          # Inject source material (using Python to avoid shell escaping issues)
+          SOURCE_MATERIAL="${{ github.event.inputs.source_material }}"
+          PROMPT=$(python3 -c "
+          import sys
+          template = open('$TEMPLATE').read()
+          source = sys.stdin.read()
+          print(template.replace('{{SOURCE_MATERIAL}}', source))
+          " <<< "$SOURCE_MATERIAL")
+
+          # Build tags YAML lines
+          TAGS_YAML=""
+          IFS=',' read -ra TAG_ARRAY <<< "$TAGS"
+          for tag in "${TAG_ARRAY[@]}"; do
+            tag=$(echo "$tag" | xargs)
+            TAGS_YAML="${TAGS_YAML}  - ${tag}"$'\n'
+          done
+
+          # Build series YAML lines
+          SERIES_YAML=""
+          if [ -n "$SERIES" ]; then
+            SERIES_YAML="series: '${SERIES}'"$'\n'"seriesOrder: ${SERIES_ORDER}"
+          fi
+
+          # Call Claude API via Python to handle JSON safely
+          python3 - <<PYEOF
+          import json, urllib.request, os, sys
+
+          api_key = os.environ["ANTHROPIC_API_KEY"]
+          prompt = open("/tmp/prompt.txt").read() if os.path.exists("/tmp/prompt.txt") else ""
+
+          # Re-read prompt from env (written below)
+          with open("/tmp/prompt_content.txt") as f:
+              prompt = f.read()
+
+          payload = {
+              "model": "claude-sonnet-4-20250514",
+              "max_tokens": 4096,
+              "messages": [{"role": "user", "content": prompt}]
+          }
+
+          req = urllib.request.Request(
+              "https://api.anthropic.com/v1/messages",
+              data=json.dumps(payload).encode(),
+              headers={
+                  "content-type": "application/json",
+                  "x-api-key": api_key,
+                  "anthropic-version": "2023-06-01"
+              }
+          )
+
+          try:
+              with urllib.request.urlopen(req) as resp:
+                  body = json.loads(resp.read())
+                  content = body["content"][0]["text"]
+                  with open("/tmp/generated_content.txt", "w") as f:
+                      f.write(content)
+          except urllib.error.HTTPError as e:
+              print(f"ERROR: Claude API returned HTTP {e.code}")
+              print(e.read().decode())
+              sys.exit(1)
+          PYEOF
+
+          # Save prompt to temp file for Python script
+          echo "$PROMPT" > /tmp/prompt_content.txt
+
+          # Re-run the Python API call now that temp file exists
+          python3 - <<PYEOF
+          import json, urllib.request, os, sys
+
+          api_key = os.environ["ANTHROPIC_API_KEY"]
+          with open("/tmp/prompt_content.txt") as f:
+              prompt = f.read()
+
+          payload = {
+              "model": "claude-sonnet-4-20250514",
+              "max_tokens": 4096,
+              "messages": [{"role": "user", "content": prompt}]
+          }
+
+          req = urllib.request.Request(
+              "https://api.anthropic.com/v1/messages",
+              data=json.dumps(payload).encode(),
+              headers={
+                  "content-type": "application/json",
+                  "x-api-key": api_key,
+                  "anthropic-version": "2023-06-01"
+              }
+          )
+
+          try:
+              with urllib.request.urlopen(req) as resp:
+                  body = json.loads(resp.read())
+                  content = body["content"][0]["text"]
+                  if not content:
+                      print("ERROR: Empty response from Claude API")
+                      sys.exit(1)
+                  with open("/tmp/generated_content.txt", "w") as f:
+                      f.write(content)
+                  print("Content generated successfully.")
+          except urllib.error.HTTPError as e:
+              print(f"ERROR: Claude API returned HTTP {e.code}")
+              print(e.read().decode())
+              sys.exit(1)
+          PYEOF
+
+          # Strip any frontmatter Claude may have generated
+          python3 -c "
+          import re, sys
+          content = open('/tmp/generated_content.txt').read()
+          # Remove leading frontmatter block if Claude included one
+          content = re.sub(r'^---\n.*?\n---\n', '', content, flags=re.DOTALL)
+          content = content.lstrip('\n')
+          open('/tmp/content_body.txt', 'w').write(content)
+          "
+
+          CONTENT_BODY=$(cat /tmp/content_body.txt)
+
+          # Write frontmatter + content to file
+          {
+            echo "---"
+            echo "publishDate: ${DATE}"
+            echo "title: '${TOPIC}'"
+            echo "excerpt: ''"
+            echo "category: '${CATEGORY}'"
+            echo "tags:"
+            echo -n "${TAGS_YAML}"
+            echo "author: 'Ruby Jha'"
+            if [ -n "$SERIES_YAML" ]; then
+              echo "${SERIES_YAML}"
+            fi
+            echo "draft: true"
+            echo "metadata:"
+            echo "  description: ''"
+            echo "---"
+            echo ""
+            cat /tmp/content_body.txt
+          } > "$FILE_PATH"
+
+          echo "SLUG=${SLUG}" >> "$GITHUB_ENV"
+          echo "FILE_PATH=${FILE_PATH}" >> "$GITHUB_ENV"
+          echo "TOPIC=${TOPIC}" >> "$GITHUB_ENV"
+
+      - name: Create branch and PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="content/draft-${SLUG}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add "${FILE_PATH}"
+          git commit -m "draft: ${TOPIC}"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "📝 Draft: ${TOPIC}" \
+            --body "Auto-generated blog post draft. Review, edit for voice, then merge to publish." \
+            --label "draft" \
+            --base main
