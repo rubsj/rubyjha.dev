@@ -60,6 +60,7 @@ said so."
 ## LINKEDIN COMPANION POST
 
 After the blog post, generate a LinkedIn excerpt:
+
 - 200-300 words (1,300-2,000 characters)
 - Lead with the surprising finding or the failure that started it
 - End with link to full post and a genuine question

@@ -11,6 +11,7 @@ systems-thinking, documenting findings) rather than LinkedIn motivational
 poster energy.
 
 Core principles:
+
 - First person, story-driven. "Here's what happened when I..."
 - Show your reasoning, not just your conclusions. If you made a trade-off,
   name what you considered and rejected.
@@ -21,6 +22,7 @@ Core principles:
 - Write in natural paragraphs. Never one-sentence-per-line formatting.
 
 What makes content authentic (do this):
+
 - Lead with insight, not ego.
 - Specificity over generality: real company names, real numbers, real situations.
 - Share wins but make them teachable.
@@ -31,6 +33,7 @@ What makes content authentic (do this):
 - Plain language free of corporate jargon.
 
 What triggers cringe (never do this):
+
 - Trauma-to-triumph arc ("I wasn't going to post this, but...")
 - Humble brag (masking self-promotion as humility)
 - Engagement bait CTAs ("Agree?" / "Comment YES if you agree")
@@ -90,6 +93,7 @@ decision is stakeholder management. Every code review is a feedback
 story. Every production incident is crisis leadership.
 
 Use these attribution framings naturally:
+
 - "At a company I worked at..." (distances from direct accountability
   while maintaining authenticity)
 - "The best [CTO/VP/manager] I ever worked for..." (borrows others'
@@ -100,6 +104,7 @@ Use these attribution framings naturally:
   was..." (reframes technical work as leadership)
 
 Five frameworks when the story isn't autobiographical management:
+
 1. **Observation-to-Principle:** Transform decades of watching leaders
    into original content. "The best director I worked for did X."
 2. **Case study analysis:** Use publicly known industry examples to

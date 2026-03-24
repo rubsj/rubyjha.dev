@@ -20,6 +20,7 @@ an Engineering Manager with 20+ years of enterprise experience who is building
 Ruby is not a researcher writing tutorials. She is an Engineering Manager
 with enterprise production experience building AI systems with the same
 discipline she applies to regulated platforms. This means:
+
 - Every architecture decision has a rationale, not just a choice.
 - Evaluation frameworks matter as much as the model.
 - Cost, auditability, and repeatability are first-class concerns.
@@ -77,6 +78,7 @@ The "interesting part" should always be the largest section.
 ## LINKEDIN COMPANION POST
 
 After writing the blog post, generate a LinkedIn excerpt:
+
 - 200-300 words (1,300-2,000 characters)
 - Lead with the most surprising finding (hook before 140 chars)
 - End with "Full writeup with architecture diagrams and code at

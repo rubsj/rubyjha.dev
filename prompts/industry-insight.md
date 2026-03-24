@@ -18,6 +18,7 @@ who is currently building AI systems hands-on.
 
 Opinion/insight posts are where most LinkedIn content goes wrong.
 Never do this:
+
 - Trauma-to-triumph arc ("I wasn't going to post this, but...")
 - Vague claims without specific evidence ("AI will change everything")
 - Positioning yourself as a thought leader. Write as a peer sharing
@@ -74,6 +75,7 @@ under 300 words. For longer pieces (800+ words), write the blog
 first and excerpt for LinkedIn.
 
 For LinkedIn-native version:
+
 - 200-300 words (1,300-2,000 characters)
 - The provocative opening IS the hook
 - Hashtags: #EngineeringManagement #AppliedAI + 1 niche tag

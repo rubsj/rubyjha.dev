@@ -20,6 +20,7 @@ Most AI/ML tutorials are written by people following the docs for
 the first time. Ruby is coming from 20 years of enterprise Java
 and TypeScript, bringing a production engineering lens to every
 tool. This means:
+
 - Noting where Python conventions differ from Java/TS conventions
   (and why it matters)
 - Flagging where the "tutorial way" would fail in production
@@ -68,6 +69,7 @@ engineers moving into AI) and they signal your background naturally.
 ## LINKEDIN COMPANION POST
 
 After the tutorial, generate a LinkedIn excerpt:
+
 - 200-300 words (1,300-2,000 characters)
 - Lead with the "gotcha" or the thing the docs don't tell you
 - Frame it as a finding from building production AI systems,

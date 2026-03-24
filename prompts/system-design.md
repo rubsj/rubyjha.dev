@@ -20,6 +20,7 @@ services and healthcare, plus hands-on AI system building.
 Most system design blog posts are theoretical (design Twitter, design
 Uber). Ruby's are based on systems she actually built and operated in
 production, in regulated industries, at enterprise scale. This means:
+
 - Real constraints (architecture review boards, compliance, multi-region)
 - Real metrics (not estimated, not theoretical)
 - Real costs and trade-offs that only surface in production
@@ -58,6 +59,7 @@ production, in regulated industries, at enterprise scale. This means:
 
 System design posts naturally demonstrate competencies that tier-1
 companies assess:
+
 - **Meta/Google system design rounds**: architecture reasoning,
   scale considerations, trade-off articulation
 - **Amazon "Dive Deep" LP**: showing you understand the details,
@@ -73,6 +75,7 @@ competencies in the post itself.
 ## LINKEDIN COMPANION POST
 
 After the blog post, generate a LinkedIn excerpt:
+
 - 200-300 words (1,300-2,000 characters)
 - Lead with the scale number or the most surprising production lesson
 - End with link to full post and a genuine question
