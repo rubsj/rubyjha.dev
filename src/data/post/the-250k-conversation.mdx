@@ -1,0 +1,81 @@
+---
+publishDate: 2026-03-21
+title: 'How a One-Month Fix Saved $250K/Month in Ops Costs'
+excerpt: 'How I scoped a 1-year architecture proposal down to a 1-month solution that cut support calls by 60% and saved $250K in recurring ops costs.'
+category: 'engineering-leadership'
+tags:
+  - leadership
+  - communication
+  - technical-strategy
+  - engineering-management
+author: 'Ruby Jha'
+draft: false
+metadata:
+  description: 'How I scoped a 1-year architecture proposal down to a 1-month solution that cut support calls by 60% and saved $250K in recurring ops costs.'
+---
+
+The product team kept saying the cloud management console was "working." The ops team's ticket queue told a different story.
+
+When our company moved its flagship investment management platform from on-prem to cloud SaaS, something broke that wasn't in any runbook. The institutional customers who had spent years customizing their on-prem installations, downloading log files on demand, uploading their own configuration files, suddenly couldn't do any of it. The permissions model that made sense on-prem didn't survive the migration. Customers who used to handle these tasks in minutes were now filing support tickets and waiting up to three days for an ops engineer to do it for them.
+
+If you've managed a product through a major platform migration, you've seen this pattern. The migration itself ships on time. The feature parity checklist looks green. But the workflow parity, the stuff that doesn't show up in a feature matrix, quietly breaks. And the cost doesn't surface in sprint velocity. It surfaces in ops burn rate and customer frustration.
+
+## The real problem behind the stated problem
+
+A cloud management console had been built specifically to give customers back the autonomy they'd lost. On paper, it restored the self-service capabilities they'd had on-prem. In practice, the console had stalled. It couldn't pass security review. Governance had concerns about the data access patterns. The product existed, but without the approvals it needed, it wasn't delivering the ROI anyone had projected.
+
+When I took over the project, I started by ignoring the backlog. Instead, I spent two weeks talking to three groups: the ops team handling the tickets, the product managers tracking customer complaints, and the security and governance teams blocking the approvals.
+
+What I found was a classic alignment gap. Product wanted everything shipped. Security wanted a bulletproof architecture. And the ops team just wanted the call volume to drop. Everyone was right about what they needed. Nobody was aligned on what to build first.
+
+## The 1-year solution and why I rejected it
+
+The architecture team had already proposed a solution. It was thorough, well-designed, and would have taken roughly a year to build. The design required cloud infrastructure components that our org hadn't provisioned yet. It involved integration patterns we hadn't validated in production. There were too many unknowns stacked on top of each other, and each unknown added months.
+
+I could have endorsed that plan. It was the "right" architecture. But a year is a long time when your ops team is bleeding $250K a month in manual support costs and your enterprise customers are openly questioning whether the cloud migration was a mistake.
+
+So I asked a different question: what is the smallest thing we can ship that captures the largest share of value?
+
+## Finding the 80/20
+
+I worked with product to analyze the ops ticket data. The breakdown was revealing. The overwhelming majority of support calls fell into two categories: customers needing to download log files and customers needing to upload custom JSON and XML configuration files. These weren't complex workflows. They were file transfers that required elevated permissions the console didn't yet support securely.
+
+This was the leverage point. Not the 47 features on the product roadmap. Two capabilities that accounted for most of the operational pain.
+
+The challenge was that even these two features had to clear the same security and governance bar that had stalled the broader product. The architecture team's original design solved everything at once, which is precisely why it was a year-long effort. I needed an architecture that solved just these two problems in a way that governance could approve.
+
+## Negotiating the pragmatic architecture
+
+I brought together architecture, security, governance, and product for a focused design session. The framing mattered: I didn't ask "how do we accelerate the full product roadmap?" I asked "what is the minimum architecture that lets customers securely upload and download files, and that you can approve this month?"
+
+That reframing changed the conversation. The architecture team didn't have to compromise their standards. They had to scope them to a smaller surface area. Security could evaluate a bounded set of data flows instead of an entire product's permission model. Governance could review a focused design doc instead of a system-wide architecture.
+
+We arrived at a solution that met every compliance and security requirement but could be implemented in roughly one month. It wasn't the elegant end-state architecture. It was a stepping stone that delivered value immediately while remaining compatible with the longer-term design.
+
+Three things made this negotiation work:
+
+**Translate technical constraints into business timelines.** I didn't tell product "the architecture has too many unknowns." I said "the current proposal means customers wait 12 more months and ops burns another $3M before we see any relief." That made the trade-off concrete.
+
+**Give every stakeholder a win.** Security got a clean, reviewable design. Governance got a bounded scope they could approve quickly. Product got customer-facing value in weeks instead of quarters. Architecture got a design that didn't create technical debt; it just deferred scope.
+
+**Anchor on data, not opinions.** The ops ticket analysis wasn't my opinion about what to build. It was evidence of where the pain was concentrated. When a product manager pushed for additional features in the first release, I could point to the data: these two capabilities cover the vast majority of the support volume. Everything else is incremental.
+
+## What happened
+
+The team built and shipped the solution in one month. Within two months of release, customer support calls to the ops team dropped by 60%. The recurring operational cost savings came to approximately $250K per month. The feature became one of the most-used capabilities in the entire console.
+
+But there was a cost. The features we deferred still mattered. Some customers needed capabilities beyond file upload and download, and they had to wait another two quarters. A few were vocal about it. The 80/20 approach meant explicitly choosing to leave 20% of the problem unsolved, and that 20% had real people behind it. I had to be honest with product about that trade-off rather than pretending the phased approach was costless.
+
+## The principle underneath
+
+The instinct in engineering leadership is to design the complete solution. It feels responsible. It feels rigorous. But completeness has a cost measured in time, and time has a cost measured in money, customer trust, and team morale.
+
+The question that unlocked this project wasn't technical. It was "what is the smallest scope that captures the largest share of value, and what would it take for every approving stakeholder to say yes to just that scope?" That's a negotiation question, not an architecture question. And in my experience, stalled projects are almost always stalled on alignment, not on engineering.
+
+When you inherit a stuck project, resist the urge to redesign the solution. Start by mapping who needs to say yes, what each of them actually needs, and where those needs overlap. The intersection is usually much smaller than the union, and that's where you ship first.
+
+## When this doesn't apply
+
+This approach breaks down when the problem genuinely can't be decomposed. Some systems have hard dependencies where you can't ship a subset without the whole. And in regulated environments, sometimes governance really does need to review the entire system before approving any part of it. I was fortunate that the security team was willing to evaluate a bounded scope. That's not always the case, and assuming it will be without asking is a good way to waste a month on a proposal that gets rejected.
+
+What's the stalled project on your team right now, and have you mapped who actually needs to say yes?

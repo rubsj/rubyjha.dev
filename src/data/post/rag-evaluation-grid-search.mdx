@@ -1,0 +1,139 @@
+---
+publishDate: 2026-03-21
+title: "I Tested 16 RAG Configs So You Don't Have To: Embedding Choice Matters More Than Chunk Size"
+excerpt: 'Grid search across 16 RAG configurations reveals embedding model selection drives 26% more retrieval quality than chunk tuning.'
+category: 'project-deep-dives'
+tags:
+  - rag
+  - llm-evaluation
+  - embeddings
+  - vector-databases
+  - prompt-engineering
+  - python
+  - pydantic
+  - langchain
+author: 'Ruby Jha'
+series: '9-ai-projects'
+seriesOrder: 3
+draft: false
+metadata:
+  description: 'Grid search across 16 RAG configurations reveals embedding model selection drives 26% more retrieval quality than chunk tuning.'
+---
+
+I spent a week tuning chunk sizes and overlap ratios before looking at my heatmap and realizing: none of it mattered as much as which embedding model I picked. OpenAI's text-embedding-3-small beat both local models by 26% on Recall@5, and the two local models (384d and 768d) were statistically indistinguishable. If dimensionality were the driver, the 768d model should sit between them. It doesn't. That single observation changed how I think about RAG optimization priority.
+
+## The problem
+
+Every RAG tutorial walks you through picking a chunk size, choosing an overlap, selecting an embedding model, and hoping for the best. The advice is contradictory: some say 256 tokens, some say 512, some say "it depends." Nobody shows you controlled experiments isolating each variable independently. If you change chunk size and embedding model simultaneously, you can't tell which one moved the needle.
+
+I needed a systematic answer: given a set of structured documents, which combination of chunking strategy, embedding model, and retrieval method produces the best results? And more importantly, which variables actually matter and which are noise?
+
+## The architecture
+
+The framework crosses 5 chunking strategies with 3 embedding models, plus a BM25 lexical baseline: 16 configurations total. Each gets its own FAISS index. All 16 are evaluated against the same 56 synthetic QA pairs so comparisons are apples-to-apples.
+
+The five chunking strategies are deliberately structured as controlled experiments:
+
+- **Config A** (128 tokens, 25% overlap): maximum granularity, tests whether small chunks help factual retrieval.
+- **Config B** (256 tokens, 25% overlap): the industry baseline.
+- **Config C** (512 tokens, 25% overlap): long-context, tests whether bigger chunks help analytical questions.
+- **Config D** (256 tokens, 50% overlap): same as B but doubled overlap. This is the control experiment: it isolates overlap impact while holding chunk size constant.
+- **Config E** (semantic, split on Markdown headers): structure-aware chunking at section boundaries. No overlap because splits are at natural boundaries.
+
+Three embedding models: all-MiniLM-L6-v2 (384d, local), all-mpnet-base-v2 (768d, local), and OpenAI text-embedding-3-small (1536d, API). Local models run sequentially because loading 500MB sentence-transformers models in parallel on 8GB RAM would OOM. API calls use ThreadPoolExecutor because they're I/O-bound, not RAM-bound. Same principle as Java's ExecutorService: match the threading model to the bottleneck.
+
+## The interesting part: what actually drives retrieval quality
+
+Here's what I expected: chunk size tuning would produce the biggest gains, semantic chunking would dominate, and overlap would help prevent boundary fragmentation. Here's what actually happened.
+
+### Embedding model selection dominates everything else
+
+The config heatmap tells the entire story. The embedding model rows cluster tightly regardless of chunk configuration. The vertical bands show that chunk size barely moves the needle compared to embedding model choice.
+
+OpenAI text-embedding-3-small (1536d) hit 0.607 Recall@5 on the baseline Config B. MiniLM (384d) got 0.481. MPnet (768d)? Also around 0.481. That's a 26% gap between API and local, and zero meaningful gap between the two local models despite a 2x dimensionality difference.
+
+This tells me the gap is about training data quality, not vector dimensions. OpenAI's supervised training corpus is doing the heavy lifting. If I were building a production RAG system and debating whether to use a free local model or pay $0.02 per million tokens for API embeddings, this data makes the decision trivial: the API model isn't just slightly better. It's in a different league.
+
+### Overlap is overrated
+
+I designed Config D specifically to test overlap: same 256-token chunks as Config B, but 50% overlap instead of 25%. My hypothesis was that more overlap would improve recall by ensuring no content falls through boundary cracks.
+
+The data said otherwise. Config B (25% overlap) scored 0.607 Recall@5. Config D (50% overlap) scored 0.529. More overlap actively hurt performance. The redundant chunks diluted the top-k results: instead of surfacing five unique relevant chunks, the retriever returned three copies of overlapping content and missed distinct relevant sections.
+
+> **Tip:** 10-25% overlap is enough to prevent boundary fragmentation. Beyond that, you're giving the ranker more noise to sort through. The common advice to "use high overlap just to be safe" is counterproductive.
+
+### Semantic chunking won, but the margin was smaller than expected
+
+Config E (semantic, split on Markdown headers) achieved 0.625 Recall@5 with OpenAI embeddings, versus Config B's 0.607. That's a real improvement, but not the dramatic win I anticipated. The advantage: each chunk maps to a coherent section, so the embedding captures a complete idea rather than an arbitrary 256-token slice that might cut mid-paragraph. The disadvantage: variable chunk sizes mean some sections are very short (low information density) and some are very long (had to subdivide anything over 512 tokens using Config B parameters).
+
+The key insight: semantic chunking's advantage scales with document structure quality. These were well-structured Markdown docs with clear header hierarchies. On unstructured text (PDFs, transcripts, scraped HTML), I'd expect the margin to shrink or disappear entirely.
+
+### Reranking is the cheapest win in the entire pipeline
+
+Adding Cohere cross-encoder reranking on top of the best config produced the largest single improvement in the entire experiment:
+
+| Metric                      | Value  |
+| --------------------------- | ------ |
+| Recall@5 (before reranking) | 0.625  |
+| Recall@5 (after reranking)  | 0.747  |
+| Precision@5 improvement     | +32.1% |
+| Cost per 168 reranks        | $0.05  |
+
+A ~20% average lift on Recall@5 for five cents. Every config improved with reranking, but the weakest configs got the biggest lift. This makes mechanical sense: reranking is a cross-encoder that reads query and document together, so it can partially compensate for bad chunking or weak embeddings by re-scoring relevance with much more context than a bi-encoder embedding ever sees.
+
+For production, I'd always run two-stage retrieval: fast vector search to pull top-20 candidates, then cross-encoder rerank to top-5. The latency cost is negligible compared to the quality gain.
+
+### The LLM judge calibration problem nobody talks about
+
+I used an LLM judge to evaluate generation quality, and it flagged a 73% hallucination rate. That number looked catastrophic until I manually sampled the flagged responses. Of 41 items flagged as hallucinations, 22 were the model responding "I don't have enough context to answer this question." That's a refusal, not a hallucination. The judge was conflating "didn't answer" with "answered incorrectly."
+
+> **Warning:** Always manually sample your LLM judge results. A 73% hallucination rate that's actually a 46% refusal rate and a 27% true hallucination rate tells a completely different story. The first is a generation failure. The second is a prompt calibration issue.
+
+This connects to a broader problem in AI evaluation: metrics look clean until you look at the actual data. RAGAS reported 73% context precision (retrieval is working) but only 51% faithfulness (generation is not). The retrieval pipeline is solid. The generation layer needs prompt tuning and few-shot examples to push faithfulness above that 51% floor. I scoped this project to focus on the retrieval side deliberately: fix retrieval first, then fix generation. Trying to optimize both simultaneously would make it impossible to attribute improvements.
+
+## Key results
+
+The best configuration: semantic chunking by Markdown headers, OpenAI text-embedding-3-small embeddings, two-stage retrieval with Cohere reranking.
+
+| Metric                 | Value |
+| ---------------------- | ----- |
+| Best Recall@5          | 0.747 |
+| Best Precision@5       | 0.457 |
+| Best MRR@5             | 0.638 |
+| BM25 baseline Recall@5 | 0.381 |
+| Configs evaluated      | 16    |
+| Synthetic QA pairs     | 56    |
+
+Vector search beat BM25 lexical search by 64%. That's the floor the project needed to clear. The production config this data points to: semantic chunking at section boundaries, OpenAI text-embedding-3-small, two-stage retrieval (vector top-20, rerank to top-5), and BM25+vector hybrid via Reciprocal Rank Fusion. I tested vector and BM25 separately but didn't implement hybrid retrieval. The data strongly suggests RRF would be the right production choice.
+
+## What I would do differently
+
+**Larger evaluation set.** 56 QA pairs kept full pipeline iteration under 15 minutes, which was the right tradeoff for a week-long sprint. But confidence intervals are wide. Production evaluation needs 200+ questions with human-verified ground truth, not synthetic QA.
+
+**Test on unstructured documents.** Semantic chunking won because the input docs have clear header hierarchies. That result might not generalize. I'd run the same experiment on PDFs, transcripts, and scraped HTML to see where the semantic advantage disappears.
+
+**Implement hybrid retrieval from the start.** I compared vector search and BM25 separately, but the data clearly shows they have complementary strengths. BM25 catches exact keyword matches that embedding models sometimes miss. RRF combining both would have been a more useful production recommendation.
+
+**Focus on generation earlier.** 51% faithfulness is the bottleneck now, and I could have addressed it with prompt tuning and few-shot examples within the same sprint. Retrieval-first was the correct sequencing for the benchmarking story, but a production system needs both sides working.
+
+## Engineering practices
+
+This project has 5 ADRs, 557 tests, and 12 evaluation charts. A few decisions worth noting:
+
+**FAISS IndexFlatIP over ChromaDB or LanceDB.** Under 1,000 vectors, approximate nearest neighbor adds complexity for zero speed gain. Brute-force exact search is the right choice for a benchmarking framework where deterministic results matter more than scale.
+
+**Instructor for structured LLM output.** GPT-4o-mini sometimes returns 2 questions instead of 3, or questions without expected answers. Instructor's auto-retry feeds the Pydantic ValidationError back to the model, which self-corrects. In P1, this pattern reduced generation failures by roughly 60%. For anyone coming from Java, think of it as a deserializer with automatic retry on malformed JSON, except the "retry" re-prompts the LLM with the validation error.
+
+**MD5-keyed JSON cache for every API call.** The full pipeline takes 15 minutes on first run. Subsequent runs complete in 2 minutes because every embedding, generation, and reranking call is cached. Delete the cache directory to force fresh API calls. This is the kind of detail that separates "I ran an experiment" from "I built a repeatable framework."
+
+**Braintrust for experiment tracking.** Every config gets logged with inputs, outputs, scores, and feedback classification. When I realized the LLM judge was miscounting hallucinations, I could trace back to the exact responses and reclassify them without re-running the pipeline.
+
+If I were reviewing this in a PR from my team, the first thing I'd ask about is the evaluation set size. 56 questions is fine for directional findings, but the confidence intervals are too wide for production decisions. The architecture is sound. The data quality is where I'd push back.
+
+## Next in the series
+
+The next post covers P3: Contrastive Embedding Fine-Tuning. I fine-tuned all-MiniLM-L6-v2 on 1,475 dating profile pairs and flipped Spearman correlation from -0.22 to +0.85. The most surprising finding: LoRA achieved 96.9% of full fine-tuning performance using 0.32% of the parameters, but only after I discovered it needs a 10x higher learning rate than standard training. With the default learning rate, LoRA barely moved from baseline, and I would have concluded it doesn't work.
+
+All code for P2 is open source at [github.com/rubsj/ai-rag-evaluation-framework](https://github.com/rubsj/ai-rag-evaluation-framework).
+
+Previous in the series: [How I Calibrated an LLM Judge That Approved Everything](https://rubyjha.dev/blog/calibrating-an-llm-judge/)
