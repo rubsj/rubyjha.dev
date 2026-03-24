@@ -16,7 +16,7 @@ const pages: Record<string, { title: string; description: string }> = {
   },
   blog: {
     title: 'Blog — Ruby Jha',
-    description: 'Thoughts on AI engineering, architecture decisions, and lessons learned.',
+    description: 'On building AI systems, leading engineering teams, and the decisions behind both.',
   },
 };
 
