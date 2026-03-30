@@ -1,0 +1,201 @@
+---
+publishDate: 2026-03-29
+title: 'LoRA Hit 96% of Full Fine-Tuning. The Default Learning Rate Almost Killed It.'
+excerpt: 'I fine-tuned all-MiniLM-L6-v2 on dating profiles, flipped Spearman from -0.22 to +0.85, and found LoRA hit 96.2% of that with 0.32% of parameters.'
+category: 'project-deep-dives'
+tags:
+  - fine-tuning
+  - embeddings
+  - python
+author: 'Ruby Jha'
+series: '9-ai-projects'
+seriesOrder: 4
+featured: false
+draft: false
+metadata:
+  description: 'I fine-tuned all-MiniLM-L6-v2 on dating profiles, flipped Spearman from -0.22 to +0.85, and found LoRA hit 96.2% of that with 0.32% of parameters.'
+---
+
+import MetricCard from '~/components/mdx/MetricCard.astro';
+import MetricsGrid from '~/components/mdx/MetricsGrid.astro';
+import Callout from '~/components/mdx/Callout.astro';
+
+{/* Post 4 of 10 in Building 9 AI Projects */}
+{/* Previous: I Tested 16 RAG Configs So You Don't Have To (/blog/rag-evaluation-grid-search) */}
+{/* Next: Building an AI Resume Coach with Structured Output (/blog/ai-resume-coach) */}
+
+The pre-trained embedding model I started with didn't just fail at dating compatibility. It got the answer backwards. Spearman correlation was -0.22, meaning the model ranked incompatible profiles _higher_ than compatible ones. A single accuracy metric would have told me the model was "working." Eight metrics told me it had learned the opposite of what I needed.
+
+## The problem
+
+Two people who both love hiking are semantically similar, but if one needs a partner who wants kids and the other doesn't, "similar text" is the wrong signal entirely. The task was to reshape the embedding space so "nearby" means "compatible," not "topically similar." Contrastive fine-tuning does this by pulling compatible pairs closer and pushing incompatible pairs apart.
+
+The question was whether LoRA, modifying only 73K of 22.7M parameters, could achieve the same result as updating every weight in the model.
+
+## The architecture
+
+The pipeline has four stages: baseline measurement, standard fine-tuning (all 22.7M parameters), LoRA fine-tuning (73K parameters via rank-8 adapters), and an 8-metric evaluation suite that runs identically on all three models.
+
+<div class="not-prose my-8 mx-auto max-w-lg font-sans text-sm">
+  <div class="flex flex-col items-center">
+    <div class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center">
+      <span class="font-semibold text-slate-800 dark:text-slate-100">1,475 Training Pairs</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">295 Eval Pairs</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <div class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center">
+      <span class="font-semibold text-slate-800 dark:text-slate-100">Data Loader</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <div class="rotate-45 border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 w-24 h-24 flex items-center justify-center">
+      <span class="-rotate-45 font-semibold text-slate-800 dark:text-slate-100 text-xs text-center leading-tight">Training<br />Mode</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <div class="grid grid-cols-2 gap-4 w-full">
+      <div class="text-center">
+        <span class="text-xs text-slate-400 dark:text-slate-500 mb-1 block">Standard</span>
+        <div class="rounded-lg bg-blue-600 px-3 py-2.5 text-center">
+          <span class="font-semibold text-white text-xs">Full Fine-Tuning</span>
+          <br />
+          <span class="text-xs text-blue-100">22.7M params</span>
+          <br />
+          <span class="text-xs text-blue-100">CosineSimilarityLoss</span>
+        </div>
+      </div>
+      <div class="text-center">
+        <span class="text-xs text-slate-400 dark:text-slate-500 mb-1 block">LoRA</span>
+        <div class="rounded-lg bg-orange-500 px-3 py-2.5 text-center">
+          <span class="font-semibold text-white text-xs">LoRA Adapters</span>
+          <br />
+          <span class="text-xs text-orange-100">73K params, r=8</span>
+          <br />
+          <span class="text-xs text-orange-100">10x learning rate</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <div class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center">
+      <span class="font-semibold text-slate-800 dark:text-slate-100">Generate Embeddings</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">del model + gc.collect</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <div class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center">
+      <span class="font-semibold text-slate-800 dark:text-slate-100">8-Metric Evaluation</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">Spearman, Margin, AUC-ROC</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">Cohen's d, F1, Clustering</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <div class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center">
+      <span class="font-semibold text-slate-800 dark:text-slate-100">Comparison Report</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">8 Charts + HTML + FP Analysis</span>
+    </div>
+
+  </div>
+</div>
+
+Both training paths use identical hyperparameters (4 epochs, batch size 16, 100 warmup steps) and the same loss function: `CosineSimilarityLoss` from sentence-transformers, which maps label=1 pairs to target cosine similarity 1.0 and label=0 pairs to 0.0. The critical difference: LoRA needed a 10x higher learning rate.
+
+Everything runs on a MacBook Air M2 with 8GB RAM. The entire pipeline completes in under 5 minutes. I couldn't hold two models in memory simultaneously, so the pipeline loads, encodes, saves embeddings, then explicitly `del model; gc.collect()` before loading the next. Without that sequence, the process gets OOM-killed mid-evaluation.
+
+## Why LoRA almost failed
+
+### The baseline inversion
+
+Before any fine-tuning, the numbers were worse than random. Spearman: -0.219. AUC-ROC: 0.373 (below the coin-flip line of 0.5). Compatibility margin: -0.083, meaning incompatible pairs had _higher_ cosine similarity than compatible ones on average.
+
+An incompatible pair like "I need my partner to share my faith" and "I'm spiritual but not religious" contains overlapping vocabulary about religion and spirituality. The model sees that as more similar because the words overlap, even though the meaning is opposed. If you threshold at 0.5 cosine similarity, you get 69.8% "accuracy" because most cosine scores cluster in the 0.6-0.8 range regardless of label. You need distributional metrics to catch the inversion. Same lesson as the synthetic data pipeline: fix the source, don't compensate downstream.
+
+### Standard fine-tuning: the straightforward win
+
+Standard fine-tuning updated all 22.7M parameters. The Spearman flip happened almost entirely in epoch 1 (jumped from -0.219 to 0.771). By epoch 2 the model had mostly converged. The restructuring is a discrete shift, not a gradual convergence.
+
+Final numbers: Spearman 0.852. AUC-ROC 0.993. Compatibility margin swung from -0.083 to +0.941. Cohen's d moved from -0.419 to 7.451. False positives dropped from 137 to 3.
+
+### LoRA: the stall and the 10x learning rate fix
+
+LoRA adds small adapter matrices to the query and value projections in the attention layers. Rank 8, so each adapter decomposes the weight update into two small matrices (input_dim x 8 and 8 x output_dim). Total trainable parameters: 73,728, which is 0.32% of the full model.
+
+My first LoRA training run used the same learning rate as standard fine-tuning: 2e-5. Spearman stayed negative after 4 epochs. The adapters weren't learning fast enough to overcome the inversion.
+
+The reasoning that led to the fix: LoRA trains 0.32% of the parameters. Each parameter receives the same gradient magnitude as in full fine-tuning, but the _total weight update_ across 73K parameters is negligible compared to the update distributed across 22.7M parameters. The aggregate movement in embedding space is proportional to (learning rate × number of parameters being updated). Cut the parameter count by ~300x, compensate with a proportionally higher learning rate.
+
+I bumped the LoRA learning rate to 2e-4, a 10x increase. Spearman jumped to 0.197 in epoch 1 (positive, confirming the inversion was breaking), then climbed to 0.820 by epoch 4. That's 96.2% of standard fine-tuning performance.
+
+<Callout type="tip">
+  The 10x learning rate ratio isn't a universal constant. It worked here because LoRA with rank 8 on a 22.7M parameter
+  model is a specific reduction ratio. For larger models (7B+), the ratio between LoRA parameters and total parameters
+  changes, and so does the optimal LR scaling. The principle holds: LR must scale inversely with the fraction of
+  trainable parameters. The specific multiplier needs tuning per model and rank.
+</Callout>
+
+### The adapter merge bug: a silent failure
+
+After fixing the learning rate, LoRA's training curves confirmed 0.827 Spearman on held-out data. But the full 8-metric post-training evaluation produced baseline-identical metrics. Spearman: -0.219. The model had clearly learned during training, then "forgotten" everything at evaluation time.
+
+The bug was in `generate_finetuned_embeddings`. The function tried to load the LoRA adapter directory directly as a `SentenceTransformer`, which succeeded silently because the directory structure was close enough. The adapter weights were never actually applied. The model ran without errors, accepted inputs, produced embeddings. They were just the unmodified base model embeddings.
+
+The fix removed the `try/except` fallback and made LoRA always go through the correct path: load the base model, apply the adapter via `PeftModel.from_pretrained`, then call `merge_and_unload()` before encoding. After that fix, the full 8-metric suite confirmed LoRA's actual performance: Spearman 0.820, AUC-ROC 0.974, margin +0.748.
+
+Standard fine-tuning doesn't have this problem because the weights are modified in-place. With LoRA, there's a separate adapter loading path that can fail silently. No error, no warning, just a model that quietly ignores training. The test I added encodes a known pair through the merged model and asserts the output diverges from baseline. That test now gates every CI run.
+
+If I were reviewing this in a PR from my team, the adapter loading path is the first thing I'd ask about: where's the test that proves the adapter is actually applied?
+
+## Key results
+
+<MetricsGrid>
+  <MetricCard label="Spearman (Baseline → Standard)" value="-0.22 → +0.85" />
+  <MetricCard label="LoRA Spearman" value="0.820 (96.2% of standard)" />
+  <MetricCard label="LoRA Parameters" value="73K (0.32%)" />
+  <MetricCard label="LoRA Model Size" value="0.28 MB vs 86.7 MB" />
+  <MetricCard label="AUC-ROC (Standard / LoRA)" value="0.993 / 0.974" />
+  <MetricCard label="False Positives (Standard / LoRA)" value="3 / 17" />
+  <MetricCard label="Cohen's d (Standard / LoRA)" value="7.45 / 3.51" />
+  <MetricCard label="Cluster Purity (Standard / LoRA)" value="0.986 / 0.912" />
+</MetricsGrid>
+
+LoRA achieves 96.2% of standard's Spearman, but the gap widens on metrics that measure distributional separation: Cohen's d drops to 47% of standard, margin to 79.5%. LoRA's embedding space is less decisively separated, which shows up as 17 false positives versus 3. For a binary classification task, 96.2% Spearman is likely sufficient. For anything requiring high-confidence scoring (fraud detection, medical triage), the distributional gap matters.
+
+Dealbreaker pairs achieved near-perfect separation after fine-tuning ("I want kids" vs "I never want children"). Subtle mismatches ("I love lazy Sundays" vs "I'm all about meeting new people") showed the smallest improvement. That's where a reranking stage, like the Cohere cross-encoder I used in P2, would catch edge cases the embedding alone misses.
+
+## What I would do differently
+
+**Hyperparameter sweep.** I used 4 epochs, batch 16, warmup 100 based on sentence-transformers defaults and one round of manual tuning. A proper sweep over learning rate, batch size, and epoch count would likely find a better configuration, especially for LoRA where the learning rate sensitivity was the most consequential finding.
+
+**Larger eval set.** 295 eval pairs was enough to confirm the inversion and the fix, but confidence intervals are wide at that sample size. Production evaluation needs 1,000+ pairs with human-verified labels.
+
+**LoRA rank tuning.** I used rank 8 and stopped there. The gap between LoRA and standard on Cohen's d (3.51 vs 7.45) suggests the rank-8 adapters don't have enough capacity for full distributional separation. Rank 16 or 32 would likely close this gap while still being parameter-efficient. This is the experiment I'd run next.
+
+**Test on unstructured text.** This dataset had clear category labels and short preference statements. On messy, unstructured text (job descriptions, product reviews, support tickets), the same contrastive approach may need more data, different loss functions, or hard negative mining. One domain is a proof of concept, not a generalization.
+
+## Engineering practices
+
+**3 ADRs documenting the "why."** ADR-001 (LoRA vs standard comparison): why I ran both instead of picking one, with the full comparison data and a production recommendation framework for when to use each. ADR-002 (QLoRA skip): why quantized training was the wrong tool for a 22.7M parameter model on Apple Silicon, and when it would be the right tool. ADR-003 (CosineSimilarityLoss over ContrastiveLoss and TripletLoss): why I chose the simplest loss function that directly optimizes the metric I evaluate on.
+
+**112 tests.** The fine-tuning code is heavily mocked (you don't want tests that actually train a model), but the evaluation pipeline has integration tests against known embeddings.
+
+**Memory management as architecture.** On 8GB RAM, you can't hold two SentenceTransformer instances simultaneously. The pipeline enforces a strict lifecycle: load model, encode all inputs, save embeddings to disk, `del model; gc.collect()`, load next model. This pattern transfers directly to production deployments on resource-constrained infrastructure, which is most infrastructure.
+
+## Next in the series
+
+The next post covers P4: Resume Failure Analysis. I generated 250 synthetic resumes across 5 fit levels, labeled them for 5 failure modes with zero LLM calls, and found that writing template choice accounts for a 66-percentage-point difference in failure rates.
+
+All code for P3 is open source at [github.com/rubsj/ai-contrastive-embedding-finetuning](https://github.com/rubsj/ai-contrastive-embedding-finetuning).
+
+Previous in the series: [I Tested 16 RAG Configs So You Don't Have To](/blog/rag-evaluation-grid-search)
