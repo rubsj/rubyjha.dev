@@ -161,8 +161,8 @@ All blog post tags must exist in `tags.json` at project root. CI validates this 
 ## Current Site State (as of Mar 20, 2026)
 
 - **Published blog posts:** 2 (series intro + P1 deep-dive on LLM Judge calibration)
-- **Published project pages:** P1, P2 (full content), P3, P4 (can update with completion data)
-- **AI Portfolio progress:** P1–P4 complete ✅, P5 in progress
+- **Published project pages:** P1, P2, P3, P4, P5 (full content)
+- **AI Portfolio progress:** P1–P5 complete ✅
 - **OG images:** astro-og-canvas configured and working (auto-generates per page)
 - **Google Search Console:** verified, sitemap submitted
 - **Tag pages:** `/tag/[tag]` — working

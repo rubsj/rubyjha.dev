@@ -1,125 +1,143 @@
 ---
 /**
  * RAG Evaluation Pipeline diagram — static HTML/CSS/Tailwind.
- * Replaces the Mermaid flowchart LR that Dagre renders as a squished
- * horizontal strip at blog column width (11 nodes, single row).
+ * Matches the Mermaid diagram from the project README but rendered as
+ * hand-crafted HTML to avoid headless dagre layout issues (overlapping
+ * nodes when branches fan out).
  *
- * Layout: two labeled phases (Build Indexes / Evaluate Configs) as
- * vertical steppers, separated by a "56 QA Pairs" bridge node.
+ * Structure mirrors: graph TB from README
+ *   3 Markdown Documents → Parser → Chunking → Embedding + BM25 (side-by-side)
+ *   → FAISS + BM25 both feed 56 QA pairs → 5 eval layers
+ *   → 3 outputs spread horizontally
  */
 ---
 
-<div class="not-prose my-8 mx-auto max-w-md font-sans text-sm">
-  <!-- ── Phase label: Build ──────────────────────────────────────── -->
-  <p class="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-    Phase 1 — Build Indexes
-  </p>
-
-  <div class="flex flex-col">
-    <!-- 3 Markdown Docs -->
-    <div class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5">
-      <span class="font-semibold text-slate-800 dark:text-slate-100">3 Markdown Docs</span>
-    </div>
-
-    <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
-
-    <!-- 5 Chunking Strategies -->
+<div class="not-prose my-8 mx-auto max-w-lg font-sans text-sm">
+  <div class="flex flex-col items-center">
+    <!-- 3 Markdown Documents -->
     <div
-      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 flex items-center justify-between"
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
     >
-      <span class="font-semibold text-slate-800 dark:text-slate-100">5 Chunking Strategies</span>
-      <span class="text-xs text-slate-500 dark:text-slate-400">fixed · semantic · ...</span>
+      <span class="font-semibold text-slate-800 dark:text-slate-100">3 Markdown Documents</span>
     </div>
 
-    <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
 
-    <!-- 3 Embedding Models + BM25 side-by-side -->
-    <div class="grid grid-cols-2 gap-2">
+    <!-- Parser -->
+    <div
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">Parser</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <!-- Chunking: 5 strategies -->
+    <div
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">Chunking: 5 strategies</span>
+    </div>
+
+    <!-- Split into two branches -->
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <!-- Embedding: 3 models -->
+    <div
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">Embedding: 3 models</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <!-- FAISS IndexFlatIP + BM25 Baseline side-by-side -->
+    <div class="grid grid-cols-2 gap-4 w-full">
       <div
-        class="rounded-lg border border-indigo-300 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-950 px-3 py-2.5"
+        class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-center"
       >
-        <span class="font-semibold text-indigo-900 dark:text-indigo-100">3 Embedding Models</span>
-        <p class="mt-0.5 text-xs text-indigo-600 dark:text-indigo-400">OpenAI · MPnet · MiniLM</p>
+        <span class="font-semibold text-slate-800 dark:text-slate-100">FAISS IndexFlatIP</span>
       </div>
-      <div class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-3 py-2.5">
+      <div
+        class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-center"
+      >
         <span class="font-semibold text-slate-800 dark:text-slate-100">BM25 Baseline</span>
-        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">keyword search</p>
       </div>
     </div>
 
-    <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
 
-    <!-- FAISS Index -->
+    <!-- 56 Synthetic QA pairs -->
     <div
-      class="rounded-lg border border-indigo-300 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-950 px-4 py-2.5 flex items-center justify-between"
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
     >
-      <span class="font-semibold text-indigo-900 dark:text-indigo-100">16 FAISS Indexes</span>
-      <span class="text-xs text-indigo-600 dark:text-indigo-400">one per config</span>
-    </div>
-  </div>
-
-  <!-- ── Bridge: 56 QA Pairs ─────────────────────────────────────── -->
-  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
-  <div
-    class="rounded-lg border-2 border-amber-400 dark:border-amber-500 bg-amber-50 dark:bg-amber-950 px-4 py-2.5 flex items-center justify-between"
-  >
-    <span class="font-semibold text-amber-900 dark:text-amber-100">56 Synthetic QA Pairs</span>
-    <span class="text-xs text-amber-700 dark:text-amber-400">same set for all configs</span>
-  </div>
-  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
-
-  <!-- ── Phase label: Evaluate ───────────────────────────────────── -->
-  <p class="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-    Phase 2 — Evaluate Configs
-  </p>
-
-  <div class="flex flex-col">
-    <!-- Retrieval Metrics -->
-    <div
-      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 flex items-center justify-between"
-    >
-      <span class="font-semibold text-slate-800 dark:text-slate-100">Retrieval Metrics</span>
-      <span class="text-xs text-slate-500 dark:text-slate-400">Recall@5 · MRR</span>
+      <span class="font-semibold text-slate-800 dark:text-slate-100">56 Synthetic QA pairs</span>
     </div>
 
-    <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
 
-    <!-- Cohere Reranking -->
+    <!-- Layer 1: Retrieval Metrics -->
     <div
-      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 flex items-center justify-between"
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
     >
-      <span class="font-semibold text-slate-800 dark:text-slate-100">Cohere Reranking</span>
-      <span class="text-xs text-slate-500 dark:text-slate-400">cross-encoder second pass</span>
+      <span class="font-semibold text-slate-800 dark:text-slate-100">Layer 1: Retrieval Metrics</span>
     </div>
 
-    <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
 
-    <!-- RAGAS Quality -->
+    <!-- Layer 2: BM25 Comparison -->
     <div
-      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 flex items-center justify-between"
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
     >
-      <span class="font-semibold text-slate-800 dark:text-slate-100">RAGAS Quality</span>
-      <span class="text-xs text-slate-500 dark:text-slate-400">faithfulness · relevancy</span>
+      <span class="font-semibold text-slate-800 dark:text-slate-100">Layer 2: BM25 Comparison</span>
     </div>
 
-    <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
 
-    <!-- LLM Judge -->
+    <!-- Layer 3: Cohere Reranking -->
     <div
-      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 flex items-center justify-between"
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
     >
-      <span class="font-semibold text-slate-800 dark:text-slate-100">LLM Judge</span>
-      <span class="text-xs text-slate-500 dark:text-slate-400">hallucination check</span>
+      <span class="font-semibold text-slate-800 dark:text-slate-100">Layer 3: Cohere Reranking</span>
     </div>
 
-    <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
 
-    <!-- Braintrust -->
+    <!-- Layer 4: RAGAS Generation Quality -->
     <div
-      class="rounded-lg border-2 border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-950 px-4 py-2.5 flex items-center justify-between"
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
     >
-      <span class="font-semibold text-indigo-900 dark:text-indigo-100">Braintrust</span>
-      <span class="text-xs text-indigo-600 dark:text-indigo-400">all 16 runs logged</span>
+      <span class="font-semibold text-slate-800 dark:text-slate-100">Layer 4: RAGAS Generation Quality</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <!-- Layer 5: LLM Judge -->
+    <div
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">Layer 5: LLM Judge</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <!-- 3 outputs spread horizontally -->
+    <div class="grid grid-cols-3 gap-3 w-full">
+      <div
+        class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-center"
+      >
+        <span class="font-semibold text-slate-800 dark:text-slate-100 text-xs">Braintrust Experiments</span>
+      </div>
+      <div
+        class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-center"
+      >
+        <span class="font-semibold text-slate-800 dark:text-slate-100 text-xs">12 Visualizations</span>
+      </div>
+      <div
+        class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-center"
+      >
+        <span class="font-semibold text-slate-800 dark:text-slate-100 text-xs">GridSearchReport.json</span>
+      </div>
     </div>
   </div>
 </div>
