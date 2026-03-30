@@ -1,72 +1,83 @@
 ---
 /**
- * Synthetic data pipeline diagram — static HTML/CSS/Tailwind.
- * Replaces the Mermaid chart that Dagre cannot lay out cleanly at blog width
- * because of feedback edges (Corrector → Templates, Corrector → Evaluator).
+ * Synthetic Data Pipeline diagram — static HTML/CSS/Tailwind.
+ * Vertical layout matching the README's Mermaid flowchart structure.
  *
- * Layout: vertical stepper with numbered feedback-target badges (① ②) on
- * the Templates and Evaluator boxes, matching badges on the Corrector box,
- * and a legend callout below that labels each return path.
+ * Flow: Templates → Generator → Validator → Evaluator → Analysis → Corrector
+ * Feedback: Corrector → Templates (improved templates)
+ *           Corrector → Evaluator (fixed records)
  */
 ---
 
-<div class="not-prose my-8 mx-auto max-w-md font-sans text-sm">
-  <!-- ── Pipeline stages ────────────────────────────────────────── -->
-  <div class="flex flex-col">
-    <!-- 1. Templates — feedback target ① -->
+<div class="not-prose my-8 mx-auto max-w-lg font-sans text-sm">
+  <div class="flex flex-col items-center">
+    <!-- Templates v1 & v2 — feedback target ① -->
     <div
-      class="flex items-center gap-3 rounded-lg border-2 border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-950 px-4 py-2.5"
+      class="flex items-center gap-3 rounded-lg border-2 border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-950 px-5 py-2.5"
     >
       <span
         class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-500 text-white font-bold"
         style="font-size:10px">1</span
       >
-      <span class="font-semibold text-indigo-900 dark:text-indigo-100">Templates</span>
-      <span class="text-xs text-indigo-600 dark:text-indigo-400">v1 &amp; v2</span>
+      <div class="text-center">
+        <span class="font-semibold text-indigo-900 dark:text-indigo-100">Templates</span>
+        <span class="ml-2 text-xs text-indigo-600 dark:text-indigo-400">v1 & v2</span>
+      </div>
     </div>
 
-    <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
 
-    <!-- 2. Generator -->
-    <div class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5">
-      <span class="font-semibold text-slate-800 dark:text-slate-100">Generator</span>
-      <span class="ml-2 text-xs text-slate-500 dark:text-slate-400">GPT-4o-mini</span>
-    </div>
-
-    <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
-
-    <!-- 3. Validator -->
-    <div class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5">
-      <span class="font-semibold text-slate-800 dark:text-slate-100">Validator</span>
-      <span class="ml-2 text-xs text-slate-500 dark:text-slate-400">Pydantic v2</span>
-    </div>
-
-    <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
-
-    <!-- 4. Evaluator — feedback target ② -->
+    <!-- Generator -->
     <div
-      class="flex items-center gap-3 rounded-lg border-2 border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-950 px-4 py-2.5"
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">Generator</span>
+      <span class="ml-2 text-xs text-slate-500 dark:text-slate-400">GPT-4o-mini + Instructor</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <!-- Validator -->
+    <div
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">Validator</span>
+      <span class="ml-2 text-xs text-slate-500 dark:text-slate-400">Pydantic</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <!-- Evaluator — feedback target ② -->
+    <div
+      class="flex items-center gap-3 rounded-lg border-2 border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-950 px-5 py-2.5"
     >
       <span
         class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-500 text-white font-bold"
         style="font-size:10px">2</span
       >
-      <span class="font-semibold text-indigo-900 dark:text-indigo-100">Evaluator</span>
-      <span class="text-xs text-indigo-600 dark:text-indigo-400">GPT-4o Judge</span>
+      <div class="text-center">
+        <span class="font-semibold text-indigo-900 dark:text-indigo-100">Evaluator</span>
+        <span class="ml-2 text-xs text-indigo-600 dark:text-indigo-400">GPT-4o Judge</span>
+      </div>
     </div>
 
-    <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
 
-    <!-- 5. Failure Analysis -->
-    <div class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5">
-      <span class="font-semibold text-slate-800 dark:text-slate-100">Failure Analysis</span>
-    </div>
-
-    <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
-
-    <!-- 6. Corrector — feedback source → ① and ② -->
+    <!-- Analysis -->
     <div
-      class="flex items-center justify-between rounded-lg border-2 border-orange-400 dark:border-orange-500 bg-orange-50 dark:bg-orange-950 px-4 py-2.5"
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">Analysis</span>
+      <span class="ml-2 text-xs text-slate-500 dark:text-slate-400">Pandas + Seaborn</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">
+      ↓ <span class="text-xs">failure patterns</span>
+    </div>
+
+    <!-- Corrector — feedback source → ① and ② -->
+    <div
+      class="flex items-center justify-between rounded-lg border-2 border-orange-400 dark:border-orange-500 bg-orange-50 dark:bg-orange-950 px-5 py-2.5 w-full max-w-xs"
     >
       <span class="font-semibold text-orange-900 dark:text-orange-100">Corrector</span>
       <div class="flex items-center gap-1.5 text-orange-600 dark:text-orange-400">
@@ -83,7 +94,7 @@
     </div>
   </div>
 
-  <!-- ── Feedback loop legend ────────────────────────────────────── -->
+  <!-- Feedback loop legend -->
   <div
     class="mt-3 rounded-lg border border-dashed border-orange-300 dark:border-orange-700 bg-orange-50/60 dark:bg-orange-950/60 px-4 py-3 space-y-2"
   >

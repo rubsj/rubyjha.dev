@@ -1,0 +1,128 @@
+---
+/**
+ * ShopTalk Knowledge Management Agent pipeline diagrams — static HTML/CSS/Tailwind.
+ * Two vertical pipelines matching the README's flowchart structure:
+ *   1. Ingestion: PDF Files → PyMuPDF Extractor → Chunker → Embedder → FAISS Index → Disk Persistence
+ *   2. Query: Question → Embed Query → Retrieve Top-K → Rerank → LLM Generate → Answer + Sources
+ */
+---
+
+<div class="not-prose my-8 mx-auto max-w-lg font-sans text-sm">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <!-- Ingestion Pipeline -->
+    <div>
+      <p class="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+        Ingestion Pipeline
+      </p>
+      <div class="flex flex-col items-center">
+        <div
+          class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center w-full"
+        >
+          <span class="font-semibold text-slate-800 dark:text-slate-100">PDF Files</span>
+        </div>
+
+        <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+        <div
+          class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center w-full"
+        >
+          <span class="font-semibold text-slate-800 dark:text-slate-100">PyMuPDF Extractor</span>
+        </div>
+
+        <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+        <div
+          class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center w-full"
+        >
+          <span class="font-semibold text-slate-800 dark:text-slate-100">Chunker</span>
+          <br />
+          <span class="text-xs text-slate-500 dark:text-slate-400">5 strategies</span>
+        </div>
+
+        <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+        <div
+          class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center w-full"
+        >
+          <span class="font-semibold text-slate-800 dark:text-slate-100">Embedder</span>
+          <br />
+          <span class="text-xs text-slate-500 dark:text-slate-400">4 models</span>
+        </div>
+
+        <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+        <div
+          class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center w-full"
+        >
+          <span class="font-semibold text-slate-800 dark:text-slate-100">FAISS Index</span>
+        </div>
+
+        <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+        <div
+          class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center w-full"
+        >
+          <span class="font-semibold text-slate-800 dark:text-slate-100">Disk Persistence</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Query Pipeline -->
+    <div>
+      <p class="mb-2 text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Query Pipeline</p>
+      <div class="flex flex-col items-center">
+        <div
+          class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center w-full"
+        >
+          <span class="font-semibold text-slate-800 dark:text-slate-100">Question</span>
+        </div>
+
+        <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+        <div
+          class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center w-full"
+        >
+          <span class="font-semibold text-slate-800 dark:text-slate-100">Embed Query</span>
+        </div>
+
+        <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+        <div
+          class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center w-full"
+        >
+          <span class="font-semibold text-slate-800 dark:text-slate-100">Retrieve Top-K</span>
+          <br />
+          <span class="text-xs text-slate-500 dark:text-slate-400">Dense / BM25 / Hybrid</span>
+        </div>
+
+        <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+        <div
+          class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center w-full"
+        >
+          <span class="font-semibold text-slate-800 dark:text-slate-100">Rerank</span>
+          <br />
+          <span class="text-xs text-slate-500 dark:text-slate-400">optional</span>
+        </div>
+
+        <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+        <div
+          class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center w-full"
+        >
+          <span class="font-semibold text-slate-800 dark:text-slate-100">LLM Generate</span>
+          <br />
+          <span class="text-xs text-slate-500 dark:text-slate-400">+ Citations</span>
+        </div>
+
+        <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+        <div
+          class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center w-full"
+        >
+          <span class="font-semibold text-slate-800 dark:text-slate-100">Answer + Sources</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

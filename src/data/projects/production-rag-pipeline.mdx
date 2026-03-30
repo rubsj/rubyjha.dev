@@ -1,17 +1,98 @@
 ---
-title: 'Production RAG Pipeline'
-description: 'Taking the best RAG configuration from P2 and turning it into a deployable service. Hybrid search, Cohere reranking, FastAPI, Docker. The part that tutorials skip.'
+title: 'ShopTalk Knowledge Management Agent'
+description: 'I built a RAG system from scratch with no LangChain, tested 46 configurations across 5 chunking strategies, 4 embedding models, and 3 retrieval methods, and found that heading-aware chunking + OpenAI embeddings hits NDCG@5 = 0.896 and Recall@5 = 1.0.'
 projectNumber: 5
-status: 'planned'
-tags: ['rag', 'fastapi', 'vector-databases']
-techStack: ['Python', 'LangChain', 'ChromaDB', 'FastAPI', 'Cohere', 'Sentence-Transformers']
+status: 'completed'
+tags: ['rag', 'embeddings', 'vector-databases', 'llm-evaluation', 'python']
+techStack:
+  [
+    'Python',
+    'PyMuPDF',
+    'FAISS',
+    'SentenceTransformers',
+    'OpenAI',
+    'Ollama',
+    'Cohere',
+    'LiteLLM',
+    'Pydantic',
+    'Streamlit',
+    'pytest',
+  ]
+githubUrl: 'https://github.com/rubsj/ai-shoptalk-knowledge-agent'
 demoType: 'none'
-featured: false
-publishDate: 2026-02-22
+keyMetrics:
+  - label: 'NDCG@5'
+    value: '0.896'
+  - label: 'Recall@5'
+    value: '1.000'
+  - label: 'MRR'
+    value: '0.907'
+  - label: 'LLM Judge (5-axis)'
+    value: '4.77 / 5.0'
+featured: true
+publishDate: 2026-03-23
 ---
 
-P2 told me which RAG configuration works best: semantic chunking, OpenAI embeddings, Cohere reranking. P5 is about turning that into something I can actually deploy.
+import ShopTalkPipelineDiagram from '~/components/mdx/ShopTalkPipelineDiagram.astro';
 
-The plan is a FastAPI service with hybrid search (dense vectors + BM25), Cohere cross-encoder reranking, and ChromaDB for persistence. Containerized with Docker. The interesting part is not the retrieval logic. It is the operational layer: latency budgets, memory footprint, graceful degradation when the vector store is unavailable, and monitoring hooks for observability.
+My earlier evaluation framework ([P2](/projects/rag-evaluation-pipeline)) measured RAG pipelines and found the gap: 0.747 Recall@5 but only 0.511 faithfulness. P5 closes that gap. I built the system P2 measured, with no LangChain. Every component (chunker, embedder, retriever, reranker, generator) hides behind an abstract base class and swaps through YAML configuration. I tested 46 configurations across 5 chunking strategies, 4 embedding models, 3 retrieval methods, and 2 rerankers. The best pipeline hit NDCG@5 = 0.896 with perfect recall. 7 ADRs, 627 tests, 97% coverage.
 
-Most RAG tutorials end at "retrieval works in a notebook." This project starts where they stop.
+## The Problem
+
+Most RAG tutorials end at "retrieval works in a notebook." They pick one chunking strategy, one embedding model, one retrieval method, and call it done. There is no comparison, no evaluation, no evidence that the chosen configuration is better than alternatives.
+
+I needed to know whether heading-aware chunking actually beats fixed-size, whether local embeddings can compete with OpenAI's API, and whether reranking justifies its latency. The only way to answer these is to build a system where every component is swappable and test every combination with real metrics on real documents.
+
+## Architecture
+
+The system has two pipelines (ingestion and query) that share components through a factory pattern. Six abstract base classes define the interfaces. Seventeen concrete implementations plug into them. A YAML config file specifies which implementation to use for each component. Changing the config changes the pipeline. No code changes.
+
+<ShopTalkPipelineDiagram />
+
+The factory maps config strings to class instances. `{"chunker": "heading_semantic"}` becomes a `HeadingSemanticChunker`. `{"embedder": "openai"}` becomes an `OpenAIEmbedder`. A dictionary mapping strings to constructors. No framework.
+
+PDF extraction uses PyMuPDF for text and GPT-4o-mini for figure descriptions. When PyMuPDF encounters an image bounding box, the vision LLM describes it. Descriptions are cached to disk, so the $0.01 cost is one-time per document.
+
+## Key Results
+
+Best configuration: `heading_semantic_openai_dense`. Heading-aware chunks + OpenAI embeddings + dense retrieval. Reproducibility check: 0% variance across all 4 retrieval metrics on repeated runs.
+
+**Heading-aware chunking wins.** Academic papers have meaningful section structure. Fixed-size chunking breaks mid-sentence across section boundaries. Heading-semantic respects the author's organization. The gap is +0.088 NDCG@5 averaged across all embedder/retriever combinations, and it held regardless of which embedding model I paired it with.
+
+**Hybrid retrieval's advantage is statistical, not universal.** It wins on average (0.7515 vs 0.7176 dense) but the single best configuration uses dense-only. If I were picking production defaults for diverse queries, I would choose hybrid. If I had a high-quality embedder and could tune per-workload, dense is sufficient.
+
+**Reranking is the closest thing to a free lunch.** +0.11 NDCG@5, zero regressions across all 8 configurations tested, roughly 200ms latency cost. The cross-encoder re-scores each (query, chunk) pair with full bidirectional attention. What bi-encoders sacrifice for speed at retrieval time, rerankers recover at the end.
+
+**Local embeddings close 78% of the quality gap at zero cost.** Ollama nomic-embed-text (768d, $0) best NDCG@5 is 0.757 vs mpnet's 0.823 vs OpenAI's 0.896. For development iteration or cost-sensitive production, local is viable. Hybrid retrieval boosted every Ollama config I tested.
+
+LLM judge scores run high. Citation Quality averaged 4.72/5.0 from the judge, but manual spot-checks suggest around 4.0 is more accurate. The calibration offset is documented but not corrected in the reported scores. I would rather show the raw numbers with the caveat than adjust them and hide the methodology.
+
+## Key Decisions
+
+**FAISS over ChromaDB.** Full isolation per experiment vs manual metadata handling. P4 used ChromaDB for persistence and metadata filtering. P5 needed low-level control for 46 experiment configs with explicit index save/load. Different requirements, different tool.
+
+**No LangChain: first-principles RAG with ABCs.** Full control and swappability vs more boilerplate. I can use LangChain. I wanted to prove I understand what it hides. The ABC design means swapping in LangChain components later is trivial.
+
+**Hybrid retrieval with min-max score fusion.** BM25 scores range [0, infinity). Naive combination with dense similarity scores (cosine, [-1, 1]) fails. Min-max normalization to [0,1] before alpha-weighted fusion.
+
+**LiteLLM over raw OpenAI SDK.** One API for all providers vs an extra dependency. Swap OpenAI for Anthropic without changing pipeline code. Production systems need provider flexibility.
+
+**YAML + Pydantic for experiment configs.** Human-editable config files with cross-field validation at load time. This is the mechanism that makes 46-config testing possible. Adding a new experiment is one YAML file. Pydantic catches invalid combinations (like specifying a reranker model without enabling reranking) before any pipeline code runs.
+
+**PDF extraction with vision LLM image descriptions.** +9K chars from figure descriptions vs $0.01 cost per document. When PyMuPDF hits an image bounding box, GPT-4o-mini describes it. Cached to disk, so cost is one-time.
+
+6 Architecture Decision Records in the repository cover these choices plus a seventh on local vs API embedding trade-offs. Each written on the day the decision became architecturally relevant, not batched at the end.
+
+## What I Would Do Differently
+
+If I built this again, I would start with a denser ground truth. 18 queries with 1-3 gold chunks each is enough to pick winners but not enough for statistical confidence. The Precision@5 metric is essentially unusable because the annotation is too sparse, not because the pipeline underperforms. I would budget time for 100+ queries with 5-8 gold chunks each before running the experiment grid.
+
+I would also test reranking on the best chunker from the start, not just on recursive chunking. The best overall config (heading_semantic + OpenAI + dense) was never tested with reranking because I ran the reranking experiments on a different chunking baseline to isolate the reranker effect. Scientifically defensible, but it means the actual best possible pipeline remains untested.
+
+## Known Gaps
+
+Only tested on text-native academic PDFs. All 4 papers (Attention Is All You Need, BERT, RAG survey, Sentence-BERT) are text-native, not scanned. Scanned or OCR-dependent documents would need a different extraction pipeline.
+
+Precision@5 came in at 0.300. This is bounded by ground truth density, not pipeline quality. Each query has 1 to 3 gold chunks, so retrieving 5 results means at most 60% can be relevant. The metric measures annotation completeness more than retrieval accuracy.
+
+No hybrid retrieval toggle in the Streamlit UI. The experiment runner tests hybrid across the full grid, but the interactive UI uses whichever retriever the config specifies. Switching requires editing the YAML, not a UI toggle.

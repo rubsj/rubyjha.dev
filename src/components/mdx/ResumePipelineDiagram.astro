@@ -1,89 +1,127 @@
 ---
 /**
  * AI Resume Coach pipeline diagram — static HTML/CSS/Tailwind.
- * Replaces the Mermaid flowchart that Dagre cannot size correctly in SSR
- * (getBBox() returns zeros in happy-dom, causing node overlap).
+ * Vertical layout matching the README's Mermaid graph TD structure.
  *
- * Layout: vertical stepper — 8 pipeline stages from generation to demo.
+ * Flow: run_generation.py → run_labeling.py → judge.py → corrector.py
+ *       → analyzer.py → multi_hop.py → vector_store.py → api.py
+ *       → streamlit_app.py
  */
 ---
 
-<div class="not-prose my-8 mx-auto max-w-sm font-sans text-sm">
-  <!-- Stage 1: Generation -->
-  <div
-    class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 flex items-center justify-between"
-  >
-    <span class="font-semibold text-slate-800 dark:text-slate-100">Generation</span>
-    <span class="text-xs text-slate-500 dark:text-slate-400">50 jobs × 5 fit levels</span>
-  </div>
+<div class="not-prose my-8 mx-auto max-w-lg font-sans text-sm">
+  <div class="flex flex-col items-center">
+    <!-- run_generation.py -->
+    <div
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">run_generation.py</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">50 jobs × 5 fit levels</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">= 250 resumes</span>
+    </div>
 
-  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
 
-  <!-- Stage 2: Labeler -->
-  <div
-    class="rounded-lg border-2 border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-950 px-4 py-2.5 flex items-center justify-between"
-  >
-    <span class="font-semibold text-indigo-900 dark:text-indigo-100">Labeler</span>
-    <span class="text-xs text-indigo-600 dark:text-indigo-400">5 failure modes · zero LLM calls</span>
-  </div>
+    <!-- run_labeling.py -->
+    <div
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">run_labeling.py</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">5 failure mode flags</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">Jaccard similarity</span>
+    </div>
 
-  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
 
-  <!-- Stage 3: GPT-4o Judge -->
-  <div
-    class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 flex items-center justify-between"
-  >
-    <span class="font-semibold text-slate-800 dark:text-slate-100">GPT-4o Judge</span>
-    <span class="text-xs text-slate-500 dark:text-slate-400">quality score · optional</span>
-  </div>
+    <!-- judge.py -->
+    <div
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">judge.py</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">GPT-4o evaluation</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">quality score 0-1</span>
+    </div>
 
-  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
 
-  <!-- Stage 4: Corrector -->
-  <div
-    class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 flex items-center justify-between"
-  >
-    <span class="font-semibold text-slate-800 dark:text-slate-100">Corrector</span>
-    <span class="text-xs text-slate-500 dark:text-slate-400">Instructor retry · 8/8</span>
-  </div>
+    <!-- corrector.py -->
+    <div
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">corrector.py</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">Instructor retry loop</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">8/8 corrected</span>
+    </div>
 
-  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
 
-  <!-- Stage 5: Analyzer -->
-  <div
-    class="rounded-lg border-2 border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-950 px-4 py-2.5 flex items-center justify-between"
-  >
-    <span class="font-semibold text-indigo-900 dark:text-indigo-100">Analyzer</span>
-    <span class="text-xs text-indigo-600 dark:text-indigo-400">9 charts · A/B test</span>
-  </div>
+    <!-- analyzer.py -->
+    <div
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">analyzer.py</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">9 charts</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">pipeline_summary.json</span>
+    </div>
 
-  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
 
-  <!-- Stage 6: ChromaDB -->
-  <div
-    class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 flex items-center justify-between"
-  >
-    <span class="font-semibold text-slate-800 dark:text-slate-100">ChromaDB</span>
-    <span class="text-xs text-slate-500 dark:text-slate-400">vector store · 250 resumes</span>
-  </div>
+    <!-- multi_hop.py -->
+    <div
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">multi_hop.py</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">4 reasoning questions</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">per pair</span>
+    </div>
 
-  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
 
-  <!-- Stage 7: FastAPI -->
-  <div
-    class="rounded-lg border-2 border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-950 px-4 py-2.5 flex items-center justify-between"
-  >
-    <span class="font-semibold text-violet-900 dark:text-violet-100">FastAPI</span>
-    <span class="text-xs text-violet-600 dark:text-violet-400">9 endpoints · Swagger</span>
-  </div>
+    <!-- vector_store.py -->
+    <div
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">vector_store.py</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">ChromaDB</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">all-MiniLM-L6-v2</span>
+    </div>
 
-  <div class="flex justify-center py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
 
-  <!-- Stage 8: Streamlit -->
-  <div
-    class="rounded-lg border-2 border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-950 px-4 py-2.5 flex items-center justify-between"
-  >
-    <span class="font-semibold text-violet-900 dark:text-violet-100">Streamlit</span>
-    <span class="text-xs text-violet-600 dark:text-violet-400">5-page demo</span>
+    <!-- api.py -->
+    <div
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">api.py</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">FastAPI</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">9 endpoints</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <!-- streamlit_app.py -->
+    <div
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">streamlit_app.py</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">5-page demo</span>
+    </div>
   </div>
 </div>
