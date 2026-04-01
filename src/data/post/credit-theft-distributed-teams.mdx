@@ -1,0 +1,66 @@
+---
+publishDate: 2026-04-24
+title: 'Your Team Is Doing the Work. Someone Else Is Taking the Credit.'
+excerpt: 'How to fix invisible attribution in distributed teams, and why credit theft is the most corrosive trust pattern a manager can inherit.'
+category: 'engineering-leadership'
+tags:
+  - leadership
+  - team-building
+  - engineering-management
+  - engineering-culture
+  - communication
+author: 'Ruby Jha'
+series: 'trust-repair'
+seriesOrder: 4
+draft: false
+---
+
+An engineering team builds and ships a feature. They debug it through three production incidents. They refactor the API layer twice to get latency under the SLA. Then the person who presents the quarterly update to leadership describes it as "what we delivered this quarter," and every slide says "we" while every name in the room belongs to someone who wasn't writing the code.
+
+In distributed engineering organizations, this isn't a rare pathology. It's the default. Credit flows to proximity, not contribution. Whoever is in the room when leadership asks "who built this?" gets the attribution. When the builders are in a different time zone or simply not in the meetings where narratives get shaped, their work becomes organizational infrastructure: present, essential, and invisible.
+
+## Why credit theft does more damage than the other patterns
+
+Broken promises make people cynical about the institution. Information hoarding makes people guarded about their investment. But credit theft attacks something more fundamental: the belief that your contributions are real to the organization. When a team watches someone else take credit for their work, the lesson they internalize isn't "management is unfair." It's "I am invisible here."
+
+That lesson has a specific behavioral consequence. People stop doing anything that won't show up in a Jira ticket. The creative problem solving, the late-night debugging, the mentoring of junior engineers, the thoughtful code review, the knowledge sharing across teams: all of that is effort people volunteer when they believe it will be seen. It's the first thing that disappears when they believe it won't be.
+
+You'll recognize this pattern because the team's output will look technically fine but mechanically executed. PRs get approved but there's no discussion in them. Architecture decisions get made but nobody advocates for alternatives. The team ships, but they've stopped caring about what they ship.
+
+## The mechanics of invisible attribution
+
+Before you fix this, it helps to understand why it happens. In most cases, the person taking credit isn't consciously stealing. They're operating in a system that makes it easy.
+
+In distributed teams, there's usually one person who attends the cross-functional meetings, presents in leadership reviews, and writes the status updates. They're the interface between the team's output and the organization's perception. Over time, the organization conflates the interface with the source. "Sarah's team delivered X" becomes "Sarah delivered X," and nobody corrects it because Sarah isn't trying to steal credit. She's just the only name leadership knows.
+
+The second mechanism is meeting culture. In organizations where decisions and recognition happen in meetings, people who are asleep during those meetings (because they're 10 hours ahead) are structurally excluded from credit. The meeting becomes the record of contribution, and absence from the meeting becomes absence from the narrative.
+
+## The repair
+
+**Week 1: Audit the attribution chain.** Before you change anything, trace how credit currently flows. Who presents in demos? Who writes the sprint summary? Who is named in leadership updates? Who speaks in architecture reviews? If the answers to all of these are the same one or two people, and those people are not the ones writing the code, you've confirmed the pattern.
+
+**Weeks 2-3: Attach names to work at every step.** This doesn't require a big announcement or a process overhaul. It requires consistently naming the person who did the work in every artifact that leaves the team.
+
+Sprint summaries: instead of "we shipped the payment API refactor," write "Priya and Ankit shipped the payment API refactor. Priya designed the retry logic; Ankit handled the migration path." Every deliverable gets a name. Every name belongs to the person who did the work.
+
+Demo rotation: rotate who presents in sprint demos so that leadership sees and hears from the people doing the building, not just the people doing the coordinating. If time zones make live demos impractical, use recorded walkthroughs where the builder narrates their own work.
+
+Leadership updates: any document that goes to leadership with your name on it should explicitly name contributors. "My team shipped X" becomes "Priya, Ankit, and Raj shipped X. Here's what each of them contributed." This costs you nothing and changes everything for the people being named.
+
+Architecture reviews: when a technical decision is discussed in a forum the team can't attend, attribute the analysis. "This approach was designed by [person]" instead of "we considered several approaches."
+
+**Week 4: Address the previous pattern directly with the team.** Once you've started the attribution changes, acknowledge the history in a team setting. Not as an apology tour, but as a structural statement: "I've noticed that the people doing the work and the people getting visible credit haven't always been the same. I'm changing how we attribute deliverables. Here's what's different now." Then show them the sprint summary with their names in it, or the leadership update where their contributions are individually called out.
+
+## The person who was taking credit
+
+There's a difficult conversation embedded in this pattern. Often, the person who was absorbing credit is still on the team or in the org. Maybe they're a tech lead, a senior engineer, or a project manager who was doing the presenting.
+
+If I were in this situation, I'd have a private conversation with that person. Not accusatory, but direct: "Going forward, I'm going to name individual contributors in all our outward-facing communication. I'd like you to do the same when you present or write updates. This isn't about anyone having done something wrong. It's about making sure the people doing the work are visible to leadership."
+
+Most people will adjust immediately because they weren't intentionally stealing credit. The rare person who resists is telling you something about whether they see themselves as a coordinator or a contributor, and whether their role should change to reflect that.
+
+---
+
+_This framework assumes the team's work is genuinely invisible, not that the team is underperforming and wants recognition they haven't earned. If the work is solid but not differentiated, attribution alone won't fix morale. The team also needs the opportunity to do work worth attributing._
+
+_This is Part 4 of a series on trust repair for engineering managers. The final post covers the fourth pattern: micromanagement disguised as accountability. When was the last time someone on your team was individually named in a leadership update? Not the team. The person._

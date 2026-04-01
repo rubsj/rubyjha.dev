@@ -1,0 +1,66 @@
+---
+publishDate: 2026-04-03
+title: "You Just Inherited a Team That Doesn't Trust Management. Now What?"
+excerpt: 'A diagnostic framework for identifying what broke before you arrived and knowing whether your repair is working.'
+category: 'engineering-leadership'
+tags:
+  - leadership
+  - team-building
+  - engineering-management
+  - engineering-culture
+  - communication
+author: 'Ruby Jha'
+series: 'trust-repair'
+seriesOrder: 1
+draft: false
+---
+
+You open the retro board from last sprint and find three items, all variations of "improve communication," all unmarked. The board from the sprint before that has two of the same items. You scroll back three more sprints. Same themes. Nothing resolved. Nobody even bothered to mark them as incomplete, they just carried forward like scar tissue.
+
+The standup that morning confirms it. Updates clipped to one sentence. Nobody pushes back on anything. When you ask about blockers, people glance at each other and say no.
+
+How many of us have walked into this room? You didn't create the problem. But you inherited it, and the team is watching to see whether you're going to be different or just different-flavored.
+
+I've inherited this team twice. I've also been on the team watching a new manager walk in, twice. The view from each side taught me different things, but both sides agreed on one point: the managers who recovered quickly diagnosed the specific trust pattern before attempting any repair. The managers who made it worse treated "trust issues" as a single problem with a single solution.
+
+## Trust breaks in four distinct ways
+
+When a team doesn't trust management, one of four specific things happened. Each leaves a different scar and requires a different repair.
+
+**Broken promises.** Someone was told they were being groomed for the next level. They got the scope, the responsibilities, were even introduced internally as the interim for that role. Then the position went to an external hire and nobody explained why. The team watched it happen and drew conclusions about what management's words are worth. Why stretch for a promotion that might evaporate? Why take on risk for a roadmap that could change without notice? The team didn't become disengaged. They became rational.
+
+**Information asymmetry used as power.** A reorg happened. Reporting lines changed. People were moved from one team to another without being asked whether they wanted to move, and in some cases without being told until it was done. The message wasn't subtle: decisions about your career get made in rooms you aren't in, and by the time you hear about them, they're already final. The team learned to stop investing in outcomes they can't see coming and can't influence.
+
+**Credit theft.** The engineering work was done by one group, and the person representing them in stakeholder meetings presented it as their own delivery. This one is the most corrosive because it attacks something fundamental: the sense that it's safe to contribute beyond what's required. When contributions are invisible to leadership, people stop volunteering effort.
+
+**Micromanagement disguised as accountability.** Daily standups that feel like interrogations. Every story estimate questioned and then negotiated down with the implication that the original number was inflated. This pattern is especially common in engineering teams because software estimation is inherently uncertain, and a manager who doesn't understand that uncertainty will treat every miss as a discipline problem. The team learned their judgment isn't valued, so they stopped exercising it. You'll recognize this pattern because the team will seem compliant but passive: they do exactly what's asked and nothing more.
+
+## Why the diagnosis matters more than the fix
+
+The instinct most new managers have is to walk in with a solution. "I'm going to be more transparent!" "We're going to rebuild trust!" The problem is that transparency is the right fix for information asymmetry but irrelevant for credit theft. Backing off on estimates fixes micromanagement but does nothing for broken promises.
+
+If the team was burned by a promotion that evaporated, they need to see that you'll be honest about constraints, even when the constraints are unfavorable. If the team was burned by invisible credit, they need to see their names attached to their work in front of leadership. These are different muscles. Treating them as interchangeable is how you spend three months "building trust" and change nothing.
+
+## How to diagnose in two weeks
+
+In your first two weeks, do three things:
+
+Run 1:1s with one question: "What's one thing you need me to understand about this team?" Not "what can I improve" (that signals you've already decided to fix things before understanding them). Not "tell me about yourself" (that's small talk when people are wary). This specific question surfaces what the team thinks is invisible to management. The answers will cluster around one of the four patterns: if you hear about broken commitments, it's pattern one. If you hear "decisions happen without us," it's pattern two. Listen without defending anyone or promising anything.
+
+Talk to the team's cross-functional partners: PMs, QA leads, SREs who depend on this team. They see the behavioral output without the emotional narrative. A PM who says "the team used to propose creative solutions and now they just ask for specifications" is describing the aftermath of micromanagement. An SRE who says "they stopped escalating early and now we only hear about problems in production" is describing a team that learned raising issues gets you blamed for them. The external view often diagnoses the pattern faster than internal conversations.
+
+Read the artifacts. Sprint retros are the most revealing: if every retro action item says "improve communication" and nothing changed for six months, you're looking at a team that's stopped trying to change things, which usually points to information asymmetry or broken promises. PR review patterns tell a different story: if one person reviews everything, that's a micromanagement artifact. Demo presenter history reveals who gets credit: if the same person presents every sprint while others build, that's pattern three. In the teams where I've watched trust get successfully repaired, the retro board was the earliest indicator of change: within two sprints, the items shifted from repeating the same vague themes to generating new, specific, actionable items.
+
+## The 90-day test
+
+After you've diagnosed the pattern and started your repair, here's how you know it's working. The signals aren't dramatic. Nobody says "I trust you now." Instead, watch for three things: someone disagrees with you in a meeting, publicly, without hedging, which means they believe disagreement is safe. Someone brings you a problem they could have hidden, which means they believe problems won't be weaponized. Someone proposes something risky or unconventional, which means they believe their judgment is valued again.
+
+If none of these happen after 90 days of consistent behavior, you either misdiagnosed the pattern or the damage is structural: it sits in the VP layer, the reorg, the company's relationship with engineering. No amount of team-level repair fixes structural distrust.
+
+This is the hardest realization. You did the diagnosis correctly, you executed the repair consistently, and it's still not working because the system above you is still producing the same damage. The retro board is generating new items, but the same trust-breaking decisions keep coming down from leadership. At that point, you have two choices: escalate the structural problem with enough evidence and political capital to force a conversation, or accept that you're absorbing damage you can't repair and decide what that means for you. Both are legitimate. Pretending the problem is at the team level when it's at the org level is not.
+
+---
+
+_This framework assumes the previous manager is gone. If they're still in the org as your peer or skip-level, that's a different playbook entirely._
+
+_This is the first in a series on trust repair for engineering managers. Next up: what to do when the trust pattern is broken promises, specifically when promotions were dangled and pulled away. Which of the four patterns have you seen most often? I have a hypothesis about which one is most common in enterprise engineering, but I want to hear yours first._

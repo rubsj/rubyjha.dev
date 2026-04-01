@@ -1,0 +1,72 @@
+---
+publishDate: 2026-05-01
+title: 'When Standups Feel Like Interrogations'
+excerpt: 'How to diagnose whether tight oversight is a trust problem or a legitimate need, and how to hand back autonomy without losing accountability.'
+category: 'engineering-leadership'
+tags:
+  - leadership
+  - team-building
+  - engineering-management
+  - engineering-culture
+  - communication
+author: 'Ruby Jha'
+series: 'trust-repair'
+seriesOrder: 5
+draft: false
+---
+
+The daily standup has fifteen minutes on the calendar but runs thirty. Not because there's a lot to discuss. Because every estimate gets questioned. "You said three points yesterday, why is it still in progress?" "This story was supposed to be done by Wednesday." The team has learned to pad their estimates, report progress in language that doesn't invite follow-up questions, and volunteer nothing beyond the minimum.
+
+This is the fourth trust pattern: micromanagement disguised as accountability. Unlike the other patterns in this series, this one is tricky because tight oversight isn't always wrong. Sometimes a team genuinely needs close management: they're new, the domain is high-risk, or there's been a history of missed commitments. The challenge for a new manager is distinguishing between a team that's being over-controlled and a team that was under-controlled and is now being corrected.
+
+## The damage micromanagement does to engineering teams specifically
+
+Micromanagement corrodes any team, but it damages engineering teams in a particular way because software engineering is fundamentally a judgment-intensive discipline. Every PR involves a dozen micro-decisions about naming, abstraction boundaries, error handling, and testing strategy. When a manager questions every estimate and second-guesses every technical choice, they're not just being annoying. They're training the team to stop exercising judgment.
+
+The result is distinctive. The team becomes compliant but passive. They do exactly what's asked and nothing more. Nobody refactors code that isn't in the sprint. Nobody proposes a better approach than the one in the ticket. Nobody flags a risk they weren't asked about. They've learned that initiative gets questioned, so they stopped initiating.
+
+You'll also see it in estimation patterns. A team that's been micromanaged on estimates will either pad aggressively (because being "early" is safe and being "late" gets interrogated) or sandbag the scope of what they attempt (because smaller stories are easier to defend). Either way, you get a team that looks like it's shipping on time but is delivering well below what it's capable of.
+
+## The diagnostic question: is this oversight or is this damage?
+
+This is the pattern where the new manager most needs to resist the instinct to immediately "fix" things by removing controls. Because sometimes the controls are there for a reason.
+
+Ask yourself three questions:
+
+**Has the team had recent quality or delivery problems?** If the previous manager installed tight oversight in response to missed deadlines or production incidents, removing it immediately signals that you don't care about the problems they were trying to solve. The team's morale might improve temporarily, but if the underlying issues resurface, you'll have a worse situation: low trust and low delivery.
+
+**Is the oversight calibrated to risk?** Questioning every three-point story on a low-risk internal tool is micromanagement. Requiring detailed review of every change to a payment processing system that handles millions of dollars is accountability. The question isn't whether oversight exists, it's whether the level of oversight matches the stakes.
+
+**Does the oversight apply equally?** Micromanagement that targets specific people (usually the most junior or the most recently criticized) while leaving others alone is a management behavior problem. Oversight that applies uniformly to all work is a process problem. The fixes are different.
+
+If the answers are "no recent quality issues, oversight doesn't match risk, and it's not applied equally," you're looking at genuine micromanagement and the repair can begin. If the answers are more nuanced, you need a staged approach.
+
+## The repair
+
+**Week 1: Change the standup format, not the standup.** Don't cancel standups. That sends the wrong message. Instead, change what they're for. Move from status reporting ("what did you do yesterday, what are you doing today") to blocker surfacing ("what's preventing you from making progress"). Make the standup about the work, not the person. This is a small change that immediately reduces the interrogation feeling without removing any accountability structure.
+
+**Weeks 2-3: Stop questioning estimates; start questioning scope.** If the previous manager's pattern was to push back on story point estimates, invert the approach. Accept the team's estimates without debate. Instead, focus your energy on scope clarity before the sprint starts: "Is this story well-defined enough to estimate confidently? Are there unknowns we should spike on first?" This shifts the conversation from "I don't trust your judgment about how long things take" to "Let's make sure we both understand what we're building."
+
+The first time a story takes longer than estimated and you don't interrogate the team about it, they'll notice. The second time, they'll start to believe it. By the third time, estimates will start getting more honest because padding is no longer a survival strategy.
+
+**Week 4: Hand back a decision explicitly.** Pick one category of technical decision that the previous manager was controlling (library choices, testing strategy, or PR review standards) and explicitly hand it to the team. "This is your call. I trust your judgment. If it turns out to be the wrong call, we'll talk about it in retro and adjust. But the decision is yours."
+
+This needs to be a real decision with real consequences, not a token gesture. Handing the team authority over what snacks to order for the office doesn't rebuild trust in their technical judgment. Handing them authority over the testing framework for a new service does.
+
+## The staged autonomy model
+
+If the diagnostic questions revealed a more nuanced picture, one where some oversight is justified, I'd use a staged approach. Think of it as an autonomy ladder with three levels, from tightest to loosest:
+
+**Manager-approved.** You make the decision with the team's input. Use this sparingly and only for decisions where organizational context the team doesn't have changes the calculus. "I need to approve the vendor choice because there's a procurement process I'm navigating that affects the timeline."
+
+**Collaborative.** The team proposes a decision and you discuss it before they proceed. Use this for decisions with moderate risk or cross-team implications. "Draft the API contract and let's review it together before you share it with the consumer team."
+
+**Full autonomy.** The team makes the decision and tells you afterward. Use this for decisions where the team has demonstrated competence and the blast radius is small. "Choose the logging framework and let me know what you picked."
+
+The key is to tell the team which level applies to which decisions, and to move decisions up the ladder as trust builds. If the team demonstrates good judgment at the collaborative level, move those decisions to full autonomy next quarter. Make the progression explicit: "Last quarter I wanted us to review API contracts together. You've been consistently solid on those. Starting this sprint, those are yours."
+
+---
+
+_This framework assumes the team is competent and the micromanagement is the problem. If the tight oversight was installed because of genuine, repeated delivery failures, removing controls is the wrong move. Capability first, then autonomy. Reversing that order is how teams get freedom and then fail publicly, which destroys trust in a completely different way._
+
+_This is the final post in the Trust Repair series. Parts 1-4 covered the diagnostic framework, broken promises, information asymmetry, and credit theft. The common thread across all four: listen first, diagnose specifically, make one visible change, and give it 90 days. What's the most effective thing you've seen a manager do to hand autonomy back to a team that had it taken away?_
