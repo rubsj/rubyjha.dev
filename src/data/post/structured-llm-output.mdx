@@ -1,0 +1,152 @@
+---
+publishDate: 2026-04-08
+title: 'The Decision Chain That Got Structured Output to 100%'
+excerpt: 'How Instructor, flat schemas, and two-phase validation got me to 100% structured output success across 580 LLM-generated records.'
+category: 'architecture-decisions'
+tags:
+  - structured-output
+  - pydantic
+  - python
+  - synthetic-data
+  - llm-evaluation
+author: 'Ruby Jha'
+draft: false
+metadata:
+  description: 'How Instructor, flat schemas, and two-phase validation got me to 100% structured output success across 580 LLM-generated records.'
+---
+
+import MetricCard from '~/components/mdx/MetricCard.astro';
+import MetricsGrid from '~/components/mdx/MetricsGrid.astro';
+import Callout from '~/components/mdx/Callout.astro';
+
+My first LLM project needed 30 DIY repair records. Seven fields each. Flat strings, a couple of lists, nothing nested. I got 30 for 30 on the first run.
+
+My fourth project needed 250 resumes. Thirty validation points per record. Four levels of nesting. Enums, date constraints, GPA ranges, list minimums. The raw OpenAI API fails 15-30% of the time on schemas this complex.
+
+Same tool. Same goal. Four decisions between "this just works" and "this just works at 8x the complexity." I document these because the reasoning chain is what transfers across projects and teams. The tool choice doesn't.
+
+## Instructor, because I didn't want to own a retry state machine
+
+I needed typed Pydantic objects from GPT-4o-mini. The raw API returns strings. Bridging that gap by hand means writing schema serialization, JSON parsing, validation, and a retry loop. About 60 lines of boilerplate per call site. With two call sites in P1 (generator and evaluator), that's roughly 120 lines of plumbing that has nothing to do with the actual problem I'm solving.
+
+Instructor wraps the OpenAI client and handles three things:
+
+```python
+record = client.chat.completions.create(
+    model="gpt-4o-mini",
+    response_model=DIYRepairRecord,
+    messages=messages,
+    max_retries=3,
+)
+```
+
+Schema injection (calls `model_json_schema()` and appends to the system prompt). Response parsing (calls `model_validate_json()` and returns a typed object). And the part that actually matters: auto-retry with error feedback. When Pydantic validation fails, Instructor catches the `ValidationError`, formats it as a follow-up message, and retries. The LLM sees its own mistake and self-corrects.
+
+Building that retry loop manually means managing conversation history across attempts, formatting Pydantic errors into something the model can act on, and deciding what to do when retries run out. I didn't want to own that complexity when a library handles it in one parameter.
+
+I considered three alternatives. Raw OpenAI with `json_object` mode gives you full control and zero dependencies. A solid call if you have one call site and a simple schema. But with two call sites in P1 and nine projects ahead, I'd be copy-pasting the same retry logic across every one. LangChain's `StructuredOutputParser` handles parsing but lives inside a heavier ecosystem I wasn't using for anything else, and its `OutputFixingParser` sends generic "fix this" corrections rather than the specific `ValidationError`. OpenAI function calling is built into the API but requires you to write the validation and retry loop yourself, which is exactly the state machine I was trying to avoid.
+
+30/30 records generated, zero retries needed, same `response_model=` pattern reused across `generator.py` and `evaluator.py` with zero duplication. At this scale, any of the alternatives would have been fine. The decision only started to matter two projects later.
+
+## Flat schemas, because the LLM is a serialization boundary
+
+P4 generated 550 records (250 resumes + 300 jobs) with `list[str]` for skills rather than nested `Skill(name, category, years)`. 100% validation. Zero retries on the schema itself. That result traces back to a choice I made in P1 that felt like cutting corners at the time.
+
+My `DIYRepairRecord` could have used nested sub-models. `Tool(name, category, is_common)` instead of `list[str]`. `RepairStep(order, instruction, estimated_time)` instead of `list[str]`. Better data modeling, richer types, stronger per-field validation. I went flat anyway.
+
+Each nesting level adds `properties`, `required`, and `type` blocks to the JSON schema that gets injected into the prompt. The flat schema runs about 200 tokens of schema overhead. Nested models with `Tool`, `RepairStep`, and `SafetyPrecaution` sub-models would push that to 500+ tokens. That's a 2.5x increase in schema complexity that the model has to get right in a single pass. And everything downstream (evaluator, analysis, DataFrame operations) consumes flat dicts. A `groupby('failure_mode').count()` is trivial with flat records. With nested models, every analysis operation needs a flattening step first.
+
+Pydantic v2's `Annotated` syntax lets you add per-element constraints without full sub-models:
+
+```python
+tools_required: list[Annotated[str, Field(min_length=2)]] = Field(
+    min_length=1,
+    description="List of tools needed for this repair",
+)
+```
+
+You get validation on individual list items without the schema depth that trips up the LLM.
+
+If you're coming from Java/Spring, this is choosing a flat DTO over a deeply nested domain model for an API response. The richer model feels like better engineering in isolation, but the serialization boundary has opinions about what it can produce reliably. With REST APIs, that boundary is Jackson. With LLMs, that boundary is the model's ability to generate valid JSON in one shot. Same principle, different constraint. This held for most of P4's fields. Where it cost me, I'll get to below.
+
+## max_retries=5, because P1's retry budget broke at 4x complexity
+
+P1 worked with `max_retries=3` and I didn't think much about it. Then I started P4.
+
+A single P4 `Resume` has 4 levels of nesting (yes, I went flat where I could, but the domain model needs `ContactInfo`, `list[Education]`, `list[Experience]`, `list[Skill]`). Optional GPA constrained to 0.0-4.0. ISO-format dates. `ProficiencyLevel` enums. `years` constrained to 0-30. Roughly 30 individual validation points across 35 Pydantic model types.
+
+The first few generation runs told me what GPT-4o-mini gets wrong consistently: `null` instead of `[]` for empty lists, `"advanced"` instead of the enum literal `ProficiencyLevel.ADVANCED`, `"2020"` instead of ISO `"2020-01"` for dates, missing required fields in nested objects.
+
+Here's the thing that took me longer to figure out than it should have. In P1, I had a manual retry loop around `model_validate_json()`. When it failed, I just re-called the API with a generic "try again" message. That worked for 7 fields. With 30 validation points, re-calling blind meant the model would fix one thing and break another. I spent more time debugging my retry prompt than I spent on the actual generation logic. The bottleneck wasn't parsing. It was the feedback quality in the retry loop.
+
+That's when I understood what Instructor was actually doing for me. When Pydantic validation fails, Instructor extracts the exact `ValidationError` and injects it back: `"skills.0.years: Value error, must be 0-30, got -1"`. The model gets a field-level correction target, not a vague "your JSON is wrong." Contrast that with LangChain's `OutputFixingParser`, which sends the entire malformed output with a generic "fix this" instruction. On a 30-field schema, fixing one issue while introducing another is the expected behavior with that approach.
+
+I bumped to `max_retries=5`, switched to `Mode.JSON` (forces valid JSON at the protocol level, kills the class of failures where the model prefixes output with prose), and made two schema-level adjustments. Fields that LLMs rarely produce correctly (`linkedin`, `portfolio`, `coursework`) got marked `Optional[str] = None` so their absence wouldn't burn retries. And I removed `max_length` from `responsibilities: list[str]` because constraining list length caused more retries than it prevented bad data.
+
+```python
+client = instructor.from_openai(OpenAI(), mode=instructor.Mode.JSON)
+```
+
+100% validation across 250 resumes. About 15% needed 1-2 retries, none exhausted all 5 attempts. Extra cost: $0.02 across the full run. The same pattern worked identically across three pipeline stages (`generator.py`, `judge.py`, `corrector.py`), each staying under 50 lines because all the retry complexity lives in Instructor.
+
+## Two-phase validation, because not everything belongs in a retry loop
+
+The last decision was about what to keep _out_ of Instructor.
+
+P4 validates resumes at two fundamentally different levels. Structural: does this JSON parse into a valid `Resume` Pydantic model with all required fields, correct enum values, passing constraints? Semantic: does a resume claiming 15 years of experience make sense for a Junior-level role? Does it list skills that never appeared in the paired job description? Does the writing feel like awkward AI-generated prose?
+
+Different failure modes. Different detection costs. Structural failures are binary (Pydantic accepts or rejects). Semantic failures require comparing resume content against job descriptions using Jaccard similarity on skill sets, experience year thresholds, seniority level mapping.
+
+I could have shoved the semantic checks into Instructor's retry loop. Three reasons I didn't.
+
+Cost. Semantic checks via API calls run about $0.002/pair. Python can do the same comparisons in 250ms total for all 250 pairs. At $0.00.
+
+Testability. P4 has 532 tests. If the labeler needs an LLM to run, every one of those tests either needs API mocking (fragile) or real API calls (slow, expensive, non-deterministic). With the labeler as pure Python, `test_labeler.py` runs with fixtures, no mocking, no flakiness.
+
+Coupling. If the generator needs to know about seniority mappings and experience thresholds to inject them as retry prompts, I've leaked business rules into the wrong layer.
+
+So I split it:
+
+**Phase 1** runs at generation time via Instructor with `max_retries=5`. Output: guaranteed valid typed objects. Every downstream module gets clean data.
+
+**Phase 2** runs post-generation in `labeler.py`. Pure Python, deterministic, ~1ms per pair. Five failure flags (`experience_mismatch`, `seniority_mismatch`, `missing_core_skills`, `has_hallucinations`, `has_awkward_language`), 18 fields total. Zero LLM calls.
+
+**Optional Phase 3** runs a GPT-4o judge as a second opinion on Phase 2's rule-based labels. About $0.50 total, skippable with `--skip-judge`. The judge-vs-labeler agreement analysis only works because the two phases produce genuinely independent evaluations.
+
+The payoff is downstream. Because Phase 1 guarantees structural validity at the boundary, five separate modules (`labeler.py`, `judge.py`, `corrector.py`, `analyzer.py`, `multi_hop.py`) all receive typed objects. No defensive parsing. No `try/except` around `model_validate()`. No "what if this field is None?" guards scattered across the codebase. This is also the kind of separation that makes onboarding faster: someone working on the labeler doesn't need to understand Instructor's retry mechanics, and someone adding a new failure flag doesn't need to touch the generation pipeline at all.
+
+For Java developers: this is the separation between `@Valid` on a `@RequestBody` DTO and `@Service` business rules. Structural validation fails fast at the boundary. Domain logic runs on guaranteed-clean data.
+
+## How these four decisions compound
+
+Looking back, the chain is hard to unshuffle.
+
+Instructor makes retry-with-feedback viable, but the retry budget only works if the schema doesn't overwhelm it. Flat schemas reduce the error surface Instructor has to handle. When schema complexity grows anyway (P4's 30-field resumes), bumping `max_retries` and adding `Mode.JSON` absorbs the remaining variance. And two-phase validation keeps the structural retry loop focused on what it's good at, while moving semantic analysis to where it's cheap, testable, and deterministic.
+
+<MetricsGrid>
+  <MetricCard label="Records generated" value="580" />
+  <MetricCard label="Validation rate" value="100%" />
+  <MetricCard label="Pydantic model types" value="35" />
+  <MetricCard label="Total tests (no API)" value="532" />
+</MetricsGrid>
+
+## When you should choose differently
+
+These decisions aren't universal. Here's when I'd break my own rules.
+
+**Skip Instructor** if you have a single call site with a simple schema and you want zero dependencies. Raw `json_object` mode with a 10-line retry loop is cleaner than pulling in a library you don't need elsewhere. Instructor's value only kicks in when you have multiple call sites, complex schemas, or both.
+
+**Go nested** if your downstream consumers need structure. My flat-first rule works when data flows into DataFrames and CSV exports. If your pipeline feeds into a graph database, a nested API response, or a UI that renders hierarchical data, you'll spend more time reconstructing structure than you saved on LLM retries. One level of nesting is fine. I'd do it differently in P4 now: flat top-level, but nested `Education` and `Experience`, since those are the fields I keep parsing back into objects in the multi-hop analysis.
+
+**Merge validation phases** if your project is small enough that testability isn't a concern. For P1's 30 records and 6 failure modes, a single validation pass was fine. The two-phase split only justified itself at P4's scale (250 records, 532 tests, 5 downstream modules). If you have one consumer and no test suite, the separation adds complexity you won't recoup.
+
+**Lower max_retries** if you're running interactive (not batch) workloads. Five retries at ~1 second each is acceptable in a batch pipeline. In a user-facing API, that's 5 seconds of latency on the worst case. For interactive use, I'd cap at 2 retries and invest in prompt engineering and schema simplification instead.
+
+<Callout type="tip">
+  Not sure where to start? Run your schema through `model_json_schema()`, count the nesting levels, and flatten anything
+  beyond two before touching your prompts.
+</Callout>
+
+When I evaluate engineers working on AI systems, I care less about which tool they picked and more about whether they can articulate the reasoning chain behind the choice, what they traded away, and when they'd choose differently. That's what ADRs are for. I write them on every project I build, and I require them on every team I lead, because a year from now nobody remembers why a decision was made unless someone wrote it down while the trade-offs were still fresh.
+
+The full source for both projects is on [GitHub](https://github.com/rubsj).

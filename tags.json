@@ -13,6 +13,7 @@
   "crewai",
   "langchain",
   "pydantic",
+  "structured-output",
   "fastapi",
   "leadership",
   "team-building",
