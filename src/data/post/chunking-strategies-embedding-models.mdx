@@ -1,7 +1,7 @@
 ---
 publishDate: 2026-04-14
-title: 'I Tested 5 Chunking Strategies and 3 Embedding Models. Here''s What Actually Mattered.'
-excerpt: 'A grid search across 15 RAG configs revealed that chunk size matters more than embedding model, overlap is not optional, and bigger parameters don''t mean better recall.'
+title: "I Tested 5 Chunking Strategies and 3 Embedding Models. Here's What Actually Mattered."
+excerpt: "A grid search across 15 RAG configs revealed that chunk size matters more than embedding model, overlap is not optional, and bigger parameters don't mean better recall."
 category: 'architecture-decisions'
 tags:
   - rag
@@ -11,7 +11,7 @@ tags:
 author: 'Ruby Jha'
 draft: false
 metadata:
-  description: 'A grid search across 15 RAG configs revealed that chunk size matters more than embedding model, overlap is not optional, and bigger parameters don''t mean better recall.'
+  description: "A grid search across 15 RAG configs revealed that chunk size matters more than embedding model, overlap is not optional, and bigger parameters don't mean better recall."
 ---
 
 I picked MPNet over MiniLM for my RAG pipeline because it had 5x the parameters and 2x the embedding dimensions. It scored worse on every chunking configuration I tested.
@@ -24,21 +24,21 @@ The embedding model comparison was what I expected to learn from. It wasn't the 
 
 The five chunking configurations varied token count, overlap, and strategy:
 
-| Config | Tokens | Overlap | Strategy |
-|--------|--------|---------|----------|
-| A | 128 | 32 | Fixed-size |
-| B | 256 | 64 | Fixed-size |
-| C | 512 | 128 | Fixed-size |
-| D | 256 | 0 | Fixed-size (no overlap) |
-| E | variable | n/a | LLM-based semantic |
+| Config | Tokens   | Overlap | Strategy                |
+| ------ | -------- | ------- | ----------------------- |
+| A      | 128      | 32      | Fixed-size              |
+| B      | 256      | 64      | Fixed-size              |
+| C      | 512      | 128     | Fixed-size              |
+| D      | 256      | 0       | Fixed-size (no overlap) |
+| E      | variable | n/a     | LLM-based semantic      |
 
 The three embedding models spanned the cost-to-quality spectrum:
 
-| Model | Dimensions | Parameters | Cost |
-|-------|-----------|------------|------|
-| all-MiniLM-L6-v2 | 384 | 22M | Free (local) |
-| all-mpnet-base-v2 | 768 | 109M | Free (local) |
-| text-embedding-3-small | 1536 | Unknown | $0.02/1M tokens |
+| Model                  | Dimensions | Parameters | Cost            |
+| ---------------------- | ---------- | ---------- | --------------- |
+| all-MiniLM-L6-v2       | 384        | 22M        | Free (local)    |
+| all-mpnet-base-v2      | 768        | 109M       | Free (local)    |
+| text-embedding-3-small | 1536       | Unknown    | $0.02/1M tokens |
 
 I expected the ranking to follow parameter count: OpenAI > MPNet > MiniLM. The interesting question was whether OpenAI's lead justified the cost and the API dependency.
 
@@ -46,13 +46,13 @@ I expected the ranking to follow parameter count: OpenAI > MPNet > MiniLM. The i
 
 Config B (256 tokens, 64-token overlap) won the cross-model consistency test:
 
-| Config | MiniLM R@5 | MPNet R@5 | OpenAI R@5 | Avg R@5 |
-|--------|-----------|-----------|------------|---------|
-| A (128/32) | 0.291 | 0.235 | 0.304 | 0.277 |
-| **B (256/64)** | **0.481** | **0.467** | **0.607** | **0.518** |
-| C (512/128) | 0.512 | 0.375 | 0.529 | 0.472 |
-| D (256/0) | 0.427 | 0.347 | 0.398 | 0.391 |
-| E (semantic) | 0.452 | 0.413 | 0.625 | 0.497 |
+| Config         | MiniLM R@5 | MPNet R@5 | OpenAI R@5 | Avg R@5   |
+| -------------- | ---------- | --------- | ---------- | --------- |
+| A (128/32)     | 0.291      | 0.235     | 0.304      | 0.277     |
+| **B (256/64)** | **0.481**  | **0.467** | **0.607**  | **0.518** |
+| C (512/128)    | 0.512      | 0.375     | 0.529      | 0.472     |
+| D (256/0)      | 0.427      | 0.347     | 0.398      | 0.391     |
+| E (semantic)   | 0.452      | 0.413     | 0.625      | 0.497     |
 
 Config A (128 tokens) came in last across every model. At that token count, chunks are too small to contain a complete answer, so neither fragment scores well on its own.
 
@@ -76,11 +76,11 @@ The storage cost is roughly 20% more chunks. At this corpus size that's trivial.
 
 Here are the full numbers behind the claim I opened with. On Config B (the controlled comparison):
 
-| Model | R@1 | R@3 | R@5 | MRR@5 |
-|-------|-----|-----|-----|-------|
+| Model               | R@1   | R@3   | R@5   | MRR@5 |
+| ------------------- | ----- | ----- | ----- | ----- |
 | MiniLM (22M params) | 0.238 | 0.423 | 0.481 | 0.492 |
 | MPNet (109M params) | 0.146 | 0.347 | 0.467 | 0.398 |
-| OpenAI (API) | 0.317 | 0.537 | 0.607 | 0.618 |
+| OpenAI (API)        | 0.317 | 0.537 | 0.607 | 0.618 |
 
 I re-ran the embedding pipeline when I first saw these numbers. Double-checked the model names in the config, confirmed the FAISS indices were built from the correct vectors. The numbers held. MPNet trailed MiniLM by -1.4 pp on R@5 and -9.4 pp on MRR@5. It placed the first relevant result lower, returned fewer relevant results in the top 3, and used 5x the compute for embedding generation.
 
@@ -96,10 +96,10 @@ Config E (LLM-based semantic chunking) produced mixed results against Config B i
 
 Then I added Cohere reranking (free tier, 1,000 calls/month, zero marginal cost at this scale).
 
-| Config | R@5 Before Reranking | R@5 After Reranking | Improvement |
-|--------|---------------------|---------------------|-------------|
-| E-openai (semantic) | 0.625 | 0.747 | +19.5% |
-| B-openai (fixed 256/64) | 0.607 | 0.667 | +9.8% |
+| Config                  | R@5 Before Reranking | R@5 After Reranking | Improvement |
+| ----------------------- | -------------------- | ------------------- | ----------- |
+| E-openai (semantic)     | 0.625                | 0.747               | +19.5%      |
+| B-openai (fixed 256/64) | 0.607                | 0.667               | +9.8%       |
 
 The 1.8 pp lead ballooned to 8.0 pp after reranking. Semantic chunks are more coherent passages, complete sections rather than arbitrary 256-token slices, and a cross-encoder scores coherent passages more reliably. Fixed-size chunks that split mid-paragraph give the reranker less to work with.
 
@@ -107,11 +107,11 @@ E-openai + Cohere reranking hit 0.747 R@5, the highest score in the entire exper
 
 The per-question breakdown confirmed it wasn't an artifact of averaging:
 
-| Question Type | E-openai R@5 | B-openai R@5 |
-|--------------|-------------|-------------|
-| Factual (21 questions) | 0.667 | 0.643 |
-| Multi-hop (19 questions) | 0.645 | 0.632 |
-| Analytical (12 questions) | 0.653 | 0.639 |
+| Question Type             | E-openai R@5 | B-openai R@5 |
+| ------------------------- | ------------ | ------------ |
+| Factual (21 questions)    | 0.667        | 0.643        |
+| Multi-hop (19 questions)  | 0.645        | 0.632        |
+| Analytical (12 questions) | 0.653        | 0.639        |
 
 Semantic chunking won across every answerable question category. Small margins, but consistent.
 
@@ -121,12 +121,12 @@ B-openai did have higher MRR pre-reranking though (0.618 vs 0.578). Fixed-size c
 
 The best retrieval config achieved 0.747 R@5 after reranking. Then I measured what the generator actually did with those retrieved passages.
 
-| Pipeline Stage | Metric | Score |
-|---------------|--------|-------|
-| Retrieval | R@5 | 0.625 |
-| After reranking | R@5 | 0.747 |
-| RAGAS Faithfulness | Faithfulness | 0.511 |
-| LLM Judge | Correct answers | 32.1% |
+| Pipeline Stage     | Metric          | Score |
+| ------------------ | --------------- | ----- |
+| Retrieval          | R@5             | 0.625 |
+| After reranking    | R@5             | 0.747 |
+| RAGAS Faithfulness | Faithfulness    | 0.511 |
+| LLM Judge          | Correct answers | 32.1% |
 
 Faithfulness at 0.511. The retrieval pipeline found the right passages 74.7% of the time. The generator lost the signal anyway.
 
