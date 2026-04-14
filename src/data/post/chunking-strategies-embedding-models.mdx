@@ -1,0 +1,165 @@
+---
+publishDate: 2026-04-14
+title: 'I Tested 5 Chunking Strategies and 3 Embedding Models. Here''s What Actually Mattered.'
+excerpt: 'A grid search across 15 RAG configs revealed that chunk size matters more than embedding model, overlap is not optional, and bigger parameters don''t mean better recall.'
+category: 'architecture-decisions'
+tags:
+  - rag
+  - embeddings
+  - vector-databases
+  - llm-evaluation
+author: 'Ruby Jha'
+draft: false
+metadata:
+  description: 'A grid search across 15 RAG configs revealed that chunk size matters more than embedding model, overlap is not optional, and bigger parameters don''t mean better recall.'
+---
+
+I picked MPNet over MiniLM for my RAG pipeline because it had 5x the parameters and 2x the embedding dimensions. It scored worse on every chunking configuration I tested.
+
+That result came out of a grid search: 5 chunking strategies across 3 embedding models, evaluated against 56 synthetic QA pairs generated from 3 corporate annual reports (financial services, healthcare, technology) converted to Markdown, roughly 90K tokens total. 15 retrieval configurations, each with its own FAISS index, each scored on Recall@5, MRR@5, and Precision@1. I added Cohere reranking on top and measured the full pipeline through to generation.
+
+The embedding model comparison was what I expected to learn from. It wasn't the most important thing I found.
+
+## The experiment setup
+
+The five chunking configurations varied token count, overlap, and strategy:
+
+| Config | Tokens | Overlap | Strategy |
+|--------|--------|---------|----------|
+| A | 128 | 32 | Fixed-size |
+| B | 256 | 64 | Fixed-size |
+| C | 512 | 128 | Fixed-size |
+| D | 256 | 0 | Fixed-size (no overlap) |
+| E | variable | n/a | LLM-based semantic |
+
+The three embedding models spanned the cost-to-quality spectrum:
+
+| Model | Dimensions | Parameters | Cost |
+|-------|-----------|------------|------|
+| all-MiniLM-L6-v2 | 384 | 22M | Free (local) |
+| all-mpnet-base-v2 | 768 | 109M | Free (local) |
+| text-embedding-3-small | 1536 | Unknown | $0.02/1M tokens |
+
+I expected the ranking to follow parameter count: OpenAI > MPNet > MiniLM. The interesting question was whether OpenAI's lead justified the cost and the API dependency.
+
+## Chunk size dominated everything else
+
+Config B (256 tokens, 64-token overlap) won the cross-model consistency test:
+
+| Config | MiniLM R@5 | MPNet R@5 | OpenAI R@5 | Avg R@5 |
+|--------|-----------|-----------|------------|---------|
+| A (128/32) | 0.291 | 0.235 | 0.304 | 0.277 |
+| **B (256/64)** | **0.481** | **0.467** | **0.607** | **0.518** |
+| C (512/128) | 0.512 | 0.375 | 0.529 | 0.472 |
+| D (256/0) | 0.427 | 0.347 | 0.398 | 0.391 |
+| E (semantic) | 0.452 | 0.413 | 0.625 | 0.497 |
+
+Config A (128 tokens) came in last across every model. At that token count, chunks are too small to contain a complete answer, so neither fragment scores well on its own.
+
+Config C (512 tokens) looked promising with MiniLM (0.512) but degraded with MPNet and underperformed B overall. Larger chunks carry more irrelevant text per retrieved result. The retriever pulls back five chunks, and when each chunk is 512 tokens, you're handing the generator 2,560 tokens of context where maybe 400 are actually relevant.
+
+The gap between A and B was -24.1 percentage points on average R@5. Switching from 128 to 256 tokens improved retrieval more than switching from a free local model to a paid API model. Most RAG optimization discussions focus on embedding model selection. On this corpus, chunk size was the higher-leverage variable by a wide margin.
+
+## Overlap is not optional
+
+I almost didn't include Config D (zero overlap) in the experiment. It seemed obvious that overlap would help. I'm glad I tested it, because the magnitude was larger than I expected.
+
+Comparing Config B (256 tokens, 64-token overlap) against Config D (256 tokens, zero overlap) isolates exactly one variable: whether chunks share boundary content.
+
+Overlap added +12.7 percentage points to average R@5.
+
+Config D scored 0.391. Config B scored 0.518. Same token count, same embedding models, same evaluation set. The only difference was 64 tokens of shared content at chunk boundaries. A question about "what were the key risk factors for fiscal 2022" might span the boundary between two chunks. Without overlap, the relevant content is split and neither chunk contains enough signal to rank highly. With overlap, at least one chunk captures the full answer span.
+
+The storage cost is roughly 20% more chunks. At this corpus size that's trivial. At 10M documents it matters, but the retrieval quality improvement almost certainly justifies it. If your production RAG system has zero overlap, that's the single highest-ROI fix available.
+
+## More parameters did not mean better retrieval
+
+Here are the full numbers behind the claim I opened with. On Config B (the controlled comparison):
+
+| Model | R@1 | R@3 | R@5 | MRR@5 |
+|-------|-----|-----|-----|-------|
+| MiniLM (22M params) | 0.238 | 0.423 | 0.481 | 0.492 |
+| MPNet (109M params) | 0.146 | 0.347 | 0.467 | 0.398 |
+| OpenAI (API) | 0.317 | 0.537 | 0.607 | 0.618 |
+
+I re-ran the embedding pipeline when I first saw these numbers. Double-checked the model names in the config, confirmed the FAISS indices were built from the correct vectors. The numbers held. MPNet trailed MiniLM by -1.4 pp on R@5 and -9.4 pp on MRR@5. It placed the first relevant result lower, returned fewer relevant results in the top 3, and used 5x the compute for embedding generation.
+
+OpenAI led MiniLM by +12.6 pp on R@5 and +12.6 pp on MRR@5. That gap is meaningful. But MiniLM gets to 0.481 R@5 at zero cost, zero latency, zero API dependency. OpenAI gets to 0.607 at $0.02/1M tokens, ~200ms added latency per call, and a hard dependency on an external service.
+
+Averaged across all five chunk configs, the ranking held: OpenAI (0.515 avg R@5), MiniLM (0.415), MPNet (0.367).
+
+Parameter count is a poor proxy for retrieval quality on any specific corpus. MPNet was likely trained on a different data distribution, and its higher dimensionality didn't compensate on this domain. On a code corpus or a scientific paper corpus, the ranking could easily reverse. I would not generalize from this result. But I would also never skip the benchmark.
+
+## Where semantic chunking actually won
+
+Config E (LLM-based semantic chunking) produced mixed results against Config B in the initial retrieval. With OpenAI embeddings, semantic chunking won by +1.8 pp R@5 (0.625 vs 0.607). With MiniLM, Config B won by +2.9 pp. Marginal and model-dependent.
+
+Then I added Cohere reranking (free tier, 1,000 calls/month, zero marginal cost at this scale).
+
+| Config | R@5 Before Reranking | R@5 After Reranking | Improvement |
+|--------|---------------------|---------------------|-------------|
+| E-openai (semantic) | 0.625 | 0.747 | +19.5% |
+| B-openai (fixed 256/64) | 0.607 | 0.667 | +9.8% |
+
+The 1.8 pp lead ballooned to 8.0 pp after reranking. Semantic chunks are more coherent passages, complete sections rather than arbitrary 256-token slices, and a cross-encoder scores coherent passages more reliably. Fixed-size chunks that split mid-paragraph give the reranker less to work with.
+
+E-openai + Cohere reranking hit 0.747 R@5, the highest score in the entire experiment. Against the BM25 baseline, that's +36.6 pp.
+
+The per-question breakdown confirmed it wasn't an artifact of averaging:
+
+| Question Type | E-openai R@5 | B-openai R@5 |
+|--------------|-------------|-------------|
+| Factual (21 questions) | 0.667 | 0.643 |
+| Multi-hop (19 questions) | 0.645 | 0.632 |
+| Analytical (12 questions) | 0.653 | 0.639 |
+
+Semantic chunking won across every answerable question category. Small margins, but consistent.
+
+B-openai did have higher MRR pre-reranking though (0.618 vs 0.578). Fixed-size chunks are more uniform in scope, so when they match, they match precisely. Semantic chunking produces variable-length chunks, which occasionally bury the most relevant passage lower in the initial ranking. The reranker corrects for this, but if you're running without a reranker, fixed-size 256/64 is the safer bet.
+
+## The ceiling nobody talks about
+
+The best retrieval config achieved 0.747 R@5 after reranking. Then I measured what the generator actually did with those retrieved passages.
+
+| Pipeline Stage | Metric | Score |
+|---------------|--------|-------|
+| Retrieval | R@5 | 0.625 |
+| After reranking | R@5 | 0.747 |
+| RAGAS Faithfulness | Faithfulness | 0.511 |
+| LLM Judge | Correct answers | 32.1% |
+
+Faithfulness at 0.511. The retrieval pipeline found the right passages 74.7% of the time. The generator lost the signal anyway.
+
+The LLM judge evaluation had its own problems: refusal answers ("I don't have enough context") were counted as hallucinations, inflating the error rate from 58.8% to 73.2%. Analytical questions accounted for 68.2% of refusals but only 29.4% of substantive answers. So the evaluation tooling itself needed debugging before I could trust the generation metrics.
+
+I spent days optimizing retrieval from 0.607 to 0.747. The real constraint was downstream the entire time. Once retrieval R@5 passes roughly 0.70, the bottleneck shifts to generation prompt engineering, context window management, and answer extraction logic. I should have measured this first.
+
+## The decision chain, summarized
+
+After 15 configs, 56 QA pairs, and four evaluation layers, here's what I'd carry forward. If I were reviewing a team's RAG architecture, this is the sequence I'd walk through:
+
+**Start with 256-token chunks and 64-token overlap.** Highest-ROI default. Beat every other fixed-size config across all three models. The overlap alone added +12.7 pp.
+
+**Use MiniLM for development, OpenAI for production evaluation.** MiniLM at zero cost gets you 79% of OpenAI's retrieval quality. Iterate locally, validate with the API model before shipping.
+
+**Don't assume bigger models win.** On this corpus, MPNet's 5x parameter advantage bought worse performance. Benchmark on your data.
+
+**Add reranking before you invest in semantic chunking.** Cohere on the free tier gave +19.5% improvement at zero marginal cost. Better ROI than implementing LLM-based chunking.
+
+**Semantic chunking needs structured documents to pay off.** Markdown headers, section boundaries, paragraph breaks. Unstructured content (OCR'd PDFs, free-form text) falls back to fixed-size and loses the advantage.
+
+**Measure the full pipeline.** Retrieval quality is necessary but not sufficient. My best config hit 0.747 R@5 and 0.511 faithfulness. The generation layer was where my pipeline was actually failing, and I didn't know until I measured it.
+
+That last point is the one I'd want to see in every RAG architecture review on my team. Not which chunking strategy you picked, but whether you measured past retrieval into generation. The decision matters less than knowing where your system is actually broken.
+
+## When these results don't apply
+
+This corpus was 3 corporate annual reports converted from PDF to Markdown: structured documents with clear header hierarchies, section boundaries, and predictable formatting. Semantic chunking won in part because of that structure. On unstructured text (raw PDFs, transcripts, scraped HTML), fixed-size chunking might perform equally well or lose its disadvantage entirely. MPNet's poor showing here might reverse on a domain closer to its training distribution.
+
+The 56-question evaluation set is small enough that individual question variance matters. Enough to show directional differences between configs, but confidence intervals are wide. Production evaluation would need 200+ questions with human-verified ground truth. I wouldn't treat the +1.8 pp semantic vs. fixed difference as definitive at this sample size.
+
+The full 15-config grid search took roughly 4 hours on an M2 MacBook. At 10x the corpus size, you'd likely sample configurations rather than exhaustively evaluate all 15, which changes both the cost and the confidence of the results.
+
+What does generalize: running the grid search at all. Most RAG systems I've seen in production never tested more than two or three configurations. The 15-config sweep is what surfaced the counterintuitive findings. You can't intuit your way to "MPNet loses to MiniLM." You have to run it.
+
+The full retrieval benchmarking framework, all 15 configs, and the evaluation pipeline are on [GitHub](https://github.com/rubsj).
