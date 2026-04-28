@@ -1,0 +1,122 @@
+---
+publishDate: 2026-04-28
+title: 'Why I Chose FAISS for Benchmarking and ChromaDB for Production'
+excerpt: "The same vector store comparison gave opposite answers two weeks apart. The decision wasn't really about the vectors. It was about how long the system needed to live."
+category: 'architecture-decisions'
+tags:
+  - rag
+  - vector-databases
+  - architecture
+author: 'Ruby Jha'
+draft: false
+metadata:
+  description: "The same vector store comparison gave opposite answers two weeks apart. The decision wasn't really about the vectors. It was about how long the system needed to live."
+---
+
+In February I built a benchmarking framework with FAISS. Two weeks later I built a resume search API with ChromaDB. Same kind of similarity search, opposite vector store. The decision had almost nothing to do with the vectors and almost everything to do with the system around them.
+
+Either tool would have run either workload. The question that decided each one wasn't "FAISS or ChromaDB." It was "what happens to this code on Monday morning?"
+
+## The two systems
+
+The benchmarking framework was a one-shot job. I needed to compare 16 retrieval configurations against the same evaluation set: five chunking strategies times three embedding models, plus a BM25 baseline. Each of the 15 vector configs built its own index over a 500-1,200 chunk corpus. The pipeline embedded chunks, computed Recall@K, Precision@K, and MRR@K, wrote a results CSV, and exited. It ran when I kicked off an experiment, then sat idle until the next one.
+
+The resume search API was a long-lived service. A FastAPI server fronted by a Streamlit demo, holding an index of 250 candidate resumes embedded once with `all-MiniLM-L6-v2` (384 dimensions). The `/search/similar-candidates` endpoint took a free-text job description, ran cosine similarity, and returned the top-k candidates filtered by `fit_level`. The server reloaded constantly during development via `uvicorn --reload`, and in demos the index had to be queryable in milliseconds with no warmup.
+
+## FAISS won for benchmarking because raw scores beat managed lifecycle
+
+I used `faiss-cpu` with `IndexFlatIP` wrapped in a 90-line `FAISSVectorStore` class. Brute-force inner product. Because the embedder L2-normalizes every vector, inner product equals cosine similarity with zero approximation error.
+
+Three reasons it was the right call.
+
+**Direct score access.** Computing Recall@K, Precision@K, and MRR@K means working with raw similarity values. ChromaDB returns distances, not similarities, and the conversion depends on the configured space. FAISS returns the actual scores, which flow into the metric functions with no translation layer.
+
+**Brute-force was faster than ANN at this scale.** With under 1,200 vectors per config, `IndexFlatIP` queries returned in under 1ms. An IVF or HNSW index would have added training time, parameter tuning (`nlist`, `nprobe`, `ef_search`), and zero measurable speedup. Approximate indices start paying off around 10K vectors. I had under 1.2K vectors and 15 indices to build.
+
+**Per-config independence.** ChromaDB's persistence layer is a SQLite database with collections inside. To run 15 isolated experiments, I'd have to coordinate one database file across all of them. FAISS gives two files per index: a `.faiss` binary plus a `.json` sidecar with the chunk ID mapping. Each config is `cp -r` to fork and `rm -r` to drop. No database to coordinate.
+
+What I gave up: native metadata filtering (didn't need it), a managed lifecycle (the script exits at the end), and a path to scale (irrelevant offline). The chunk ID mapping is hand-rolled in the JSON sidecar.
+
+Roughly the same trade-off as raw JDBC versus an ORM: you want the raw driver when you need every result set, the managed layer when something has to outlive your debugging session.
+
+## ChromaDB won for production because lifecycle beat raw control
+
+I used ChromaDB's `PersistentClient` at `data/chromadb/` with `all-MiniLM-L6-v2`, cosine space. Build the index once after the data pipeline completes, then open the persisted collection at every server startup with no model load and no rebuild.
+
+Three new requirements flipped the answer.
+
+**Persistence without rebuild on restart.** Encoding 250 resumes with `all-MiniLM-L6-v2` takes about 2 seconds on an M2 MacBook Air. With `uvicorn --reload` watching the source files, that 2 seconds hits on the first request after every code change. The demo feels broken, especially over Zoom. ChromaDB's `PersistentClient` writes both vectors and metadata to SQLite once. The API and Streamlit both open the persisted index at startup with zero model loading. The model loads lazily on the first search request, which is the only place I want it loaded.
+
+If I'd reused FAISS, I would have written a persistence wrapper: serialize the index, serialize the metadata as JSON, write a "rebuild or load" branch that checks file freshness against the source data. Each line a place where the wrong restart-after-code-change behavior could live.
+
+**Native metadata filtering.** The API filters by `fit_level`, a five-level enum (`excellent`, `good`, `partial`, `poor`, `mismatch`) computed during the data pipeline and stored alongside each resume. With FAISS, filtering means returning all 250 results and post-filtering in Python. With ChromaDB, `where={"fit_level": "excellent"}` filters at the index level.
+
+The performance difference is small at 250 vectors. The maintenance difference compounds: every new filterable field becomes a parameter on the `where` dict, not a new branch in post-filtering Python.
+
+**Long-lived process model.** The benchmarking framework starts, builds, evaluates, exits. The resume search API starts, serves queries, watches the file system, reloads, serves more queries. ChromaDB's `count()`, `query()`, and `get_or_create_collection()` are the primitives this pattern wants. `count()` powers the `/health` endpoint. `get_or_create_collection()` makes startup idempotent: if the index exists, open it; if it doesn't, the data pipeline builds it before the server runs.
+
+Replicating these on top of FAISS means writing a persistence wrapper, a metadata layer, a process-lifecycle helper, and an idempotent startup function. All of which ChromaDB ships by default.
+
+What I paid for it.
+
+ChromaDB 1.5 has a known `EmbeddingFunction` conflict on `get_collection()`. If the collection was built without a custom EF and the API tries to attach one at query time, it raises `ValueError`. The workaround: manage `_ef` as a module-level singleton, call `_ef([query_text])` directly, and pass the result via `query_embeddings=...` to bypass ChromaDB's internal EF dispatch. Five lines of code I found in the issue tracker.
+
+The SQLite backend is single-writer. Fine for one pipeline writing and multiple processes reading. Not fine for concurrent writes from a write-through worker.
+
+The `chromadb` package pulls `onnxruntime` (~50MB) for its default embedder, which I never use. Reasonable design choice from their side, dead weight on my install.
+
+## The vectors weren't what changed
+
+Both systems hold 384-dimensional float vectors in cosine space at comparable scale. What changed is the surrounding system.
+
+| Requirement        | Benchmarking framework | Resume search API             |
+| ------------------ | ---------------------- | ----------------------------- |
+| Process lifecycle  | Build, evaluate, exit  | Long-lived, frequent restarts |
+| Persistence value  | Debug only             | Critical for startup latency  |
+| Score access       | Raw similarity values  | Ranked candidates             |
+| Metadata filtering | None                   | Required at index level       |
+| Indices            | 15 independent         | 1                             |
+| Restart cost       | None                   | 2 seconds without persistence |
+| Scale              | 500-1,200 per config   | 250 total                     |
+
+Six of seven rows are about how the system runs, not what's in it. The vector-related row didn't decide the choice.
+
+## Process lifecycle and read pattern decide the tool
+
+The framework that picked the tool reduces to two questions.
+
+**What is the process lifecycle?** A batch job that builds, evaluates, and exits has different storage needs than a service that survives restarts and serves queries for months. Persistence cost is debug-only in the first case and a startup-latency requirement in the second. The benchmarking framework would run fine on FAISS even if FAISS lost all persistence support tomorrow. The resume API would crash on every restart.
+
+**What is the read pattern?** Raw scores feeding a metric function are not the same shape as filtered ranked results feeding an API response. The first wants direct index access and predictable score arithmetic. The second wants a query language with filters and a count primitive. ChromaDB returns objects shaped like API responses. FAISS returns numpy arrays shaped like math.
+
+If I had picked the same tool for both, both paths fail in obvious ways.
+
+ChromaDB in the benchmarking framework: every metric computation translates through the distance API, and cross-config debugging gets harder. The framework keeps working. Every change costs more than it should.
+
+FAISS in the resume API: I build a persistence layer, a metadata store, and a query primitive set on top of the index. A vector library turned into a half-working database.
+
+Both paths ship. Neither is the right call.
+
+## When this comparison doesn't apply
+
+The decision changes if any of the following is true.
+
+**Scale.** This was 250 to 1,200 vectors. At 250 million, both tools shift to ANN indices and the comparison opens up. ChromaDB's HNSW backend works at that scale but has its own tuning surface (`hnsw:M`, `hnsw:ef_construction`, `hnsw:ef_search`). Past 10M vectors per index, the alternatives include Qdrant, Weaviate, pgvector, and Milvus, with the deciding factors shifting to clustering, tenancy, and replication.
+
+**Multi-writer concurrency.** ChromaDB's SQLite backend is single-writer. If multiple processes write the same index concurrently, ChromaDB is the wrong tool. Qdrant's Rust engine and pgvector's Postgres backend handle multi-writer cleanly.
+
+**You already have Postgres.** pgvector solves "I have Postgres, how do I add vectors." If your service already runs on Postgres, the right answer is probably pgvector regardless of how this comparison reads. Running a separate vector database is more expensive than adding a column type.
+
+**You need full ANN performance with custom indices.** FAISS exposes IVF, HNSW, PQ, and combinations of them with hand-tuned parameters. ChromaDB exposes HNSW with a few configuration flags. If you need to control quantization, sub-vector partitioning, or precise recall-vs-latency curves, FAISS is the only path that gives you the knobs.
+
+This was a 250-vector live API and a 1,200-vector batch benchmark. Small enough that the lifecycle question dominated.
+
+## What I'd review on a team
+
+When I review vector store choices on a team I run, I don't ask "why FAISS" or "why ChromaDB." That question doesn't have a generalizable answer. I ask the engineer to walk me through how long the index needs to live, what shape the read calls take, and what the rebuild cost looks like on a deploy or process restart. The tool falls out of the answers.
+
+The decisions I worry about on a team aren't the ones where someone picked the wrong tool. They're the ones where the engineer can't articulate the access pattern that should have decided it. "It's faster" and "it's a real database" aren't decision frameworks. The next call lands the same way.
+
+That's what I'd ask in any vector store review. Not which library you picked. Whether you walked through the access pattern that should have picked it for you.
+
+The full source for both the benchmarking framework and the resume search API is on [GitHub](https://github.com/rubsj).
