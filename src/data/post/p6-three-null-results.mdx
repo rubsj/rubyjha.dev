@@ -1,0 +1,73 @@
+---
+publishDate: 2026-05-11
+title: 'Three Experiments Said No Effect. All Three Were Wrong.'
+excerpt: 'One day of evaluation produced three null results. Every one was a measurement artifact, and each nearly became a documented fact.'
+category: 'architecture-decisions'
+tags:
+  - llm-evaluation
+  - rag
+  - multi-agent
+  - python
+author: 'Ruby Jha'
+draft: false
+metadata:
+  description: 'One day of evaluation produced three null results. Every one was a measurement artifact, and each nearly became a documented fact.'
+---
+
+My digital clone project answers computer science questions in the voice of Linus Torvalds. Under the hood it is a retrieval pipeline: a question comes in, the system searches a corpus of CS textbooks for the passages most likely to contain the answer, and a language model writes a reply grounded in what was found. Midway through the build, I paused adding features and spent a day testing three assumptions the system was resting on.
+
+The first: that the reranker, the component that re-orders retrieved passages by how well they match the question, was earning its latency. The second: that the weights in my answer-scoring formula were set sensibly. The third: that my style measurements could detect a real change in how someone writes, using the most documented tone shift in open source as the test case, Linus Torvalds' 2018 apology and leave from kernel maintenance.
+
+All three experiments came back with the same answer: no effect. The reranker was not helping. The weights did not matter. The apology had left no measurable trace in his writing.
+
+A day of clean nulls should have felt like progress; a null result is still a result. But the reranker verdict contradicted a 20% improvement I had measured myself, on an earlier project, with the same tool. That contradiction would not let go. So I dug back into each experiment, and the same thing surfaced three times: the "no effect" verdict came from how I had set the experiment up, not from the world. Three null results, all three wrong, each for a different reason.
+
+## The reranker that stopped working
+
+Retrieval in this system happens in two passes. A fast first pass pulls the 20 passages most similar to the question. The reranker is the slower, smarter second pass: it re-reads each of those 20 against the question and promotes the best 5, which are what the language model actually sees when it writes the answer.
+
+On my previous RAG project, that second pass was clearly worth it. On a corpus of financial reports, the reranker improved Recall@5 by roughly 20%, meaning the right passage landed in the top five results 20% more often. I carried that number into this project as an assumption.
+
+The experiment ran ten evaluation questions through the pipeline and measured what the reranker changed about the final answers. The effect: +2.5% on groundedness, the score measuring how well an answer is supported by the retrieved passages. Basically nothing. On the surface the conclusion writes itself: on this corpus, the reranker is dead weight.
+
+The individual scores told a different story. They did not spread across a range; they split into two clusters with nothing in between. On four of the ten questions the reranker rated a passage very high, 0.751 for the binary search question, 0.999 for stacks and queues. On the other six it rated every candidate below 0.012, and it did not matter which embedding model had produced the candidates.
+
+That pattern has a plain reading. On this corpus the reranker was acting as a pass/fail judge, not a ranking assistant. When the textbooks contained a passage that squarely answered the question, it found that passage and said so loudly. When no such passage existed, because a broad question like "explain page replacement" is answered in fragments scattered across chapters, it scored everything near zero, and there was nothing for a better ordering to improve. Financial reports with precise questions are the opposite case: a directly relevant passage almost always exists, so smarter ordering pays off on every query.
+
+The 20% lift was never a property of the reranker. It was a property of the reranker on that corpus, and I had quietly promoted it to a universal truth.
+
+## The weights that could not be tested
+
+Every answer the system generates gets three quality scores: style (does it sound like Torvalds), groundedness (is it supported by the retrieved passages), and confidence. The first version of the system combined them into one number with weights of 0.4, 0.4, and 0.2, and that number decided whether an answer shipped. The weights came from intuition, so the second experiment asked whether they mattered: shift weight toward style, shift it toward groundedness, and watch how the combined score moves.
+
+It barely moved. +0.0039 one way, minus 0.0038 the other, far below noise. Conclusion: the weights don't matter.
+
+Wrong conclusion. To keep the experiment cheap, I had fed the scorer the evaluation questions themselves instead of real generated answers. That substitution broke the experiment. The style scorer is built to recognize the texture of kernel mailing list prose, and a 12-word textbook question looks nothing like a Torvalds email. So the style score froze at 0.50 for every single input: mean 0.5023, standard deviation 0.0101, where real generated answers score between 0.80 and 0.95. Two of the confidence sub-scores froze at exactly 1.0 for the same reason.
+
+Reweighting inputs that never change produces deltas near zero by construction. The experiment could not have detected an effect even if a large one existed. The production weights stayed where they were, not because the sweep validated them, but because I now knew nothing had actually been measured against them.
+
+## The style shift that hid below the noise floor
+
+The third experiment was the most interesting one to be wrong about. In September 2018, Torvalds publicly apologized for years of abrasive conduct and took a leave from kernel maintenance. If a writing-style instrument can detect any behavioral change, surely it detects that one. I ran the same style features the clone uses (sentiment, formality, capitalization, exclamation use) over 11,052 of his emails, split them into before and after the apology, and tested each feature's shift for statistical significance.
+
+Nothing cleared the bar. The largest mover was formality, up 0.017 against a significance bar of 0.212, where the bar is two standard deviations of that feature's normal email-to-email swing. That is 8% of the way to significant. Sentiment moved 0.004 against a bar of 0.197.
+
+The problem was resolution. Torvalds' emails swing wildly from one to the next; a terse two-line ack and a long detailed rant sit hours apart in the same inbox. At single-email resolution, that natural swing is an order of magnitude larger than any before-and-after drift, so the drift drowns in it. Aggregate the same data into monthly averages and the trend becomes plainly visible in the chart. The honest conclusion was not "no shift happened." It was "this instrument, at this resolution, cannot see shifts of this size."
+
+## The same failure, three costumes
+
+Each null had a different surface story. Underneath, they were the same failure: the experiment got swamped by something about how I set it up, not by the absence of the effect I was trying to detect. Corpus shape sank the reranker test. An input proxy sank the weight sweep. Measurement resolution sank the style test.
+
+The fix was to treat those three things as variables that get picked deliberately, with the same care as the thing being measured. I had treated them as defaults that hold on their own.
+
+What I actually shipped from that day of experiments was nothing. Production stayed on the configuration it already had. The decision record accepts all three findings as documented limits, not as facts about the reranker, the weights, or Torvalds. Each got a follow-up with a corrected setup: re-run the sweep against real generated answers where style actually varies, test the style shift at monthly aggregation with the right statistical model, and rewrite the earlier reranker claim to name the corpus it was measured on.
+
+Coming from years of JVM systems, the analogy I kept reaching for is [a green test suite where every external dependency is mocked](/blog/p6-green-tests-broken-reranker). The tests pass. They are just not telling you what you think they are telling you.
+
+## When a null is real
+
+A null result deserves to be believed when the instrument has been shown to move. The weight sweep would have been credible if the style scores had varied across the input set and the deltas still came back flat. The style-shift test would have been credible at an aggregation level where the known email-to-email variance was averaged out. Before trusting a flat line, check whether the needle was capable of moving.
+
+The reason this matters more than one wasted day: null results get cited. "We tested that, it had no effect" enters the team's memory and closes off a whole branch of future work. A false positive usually gets caught the next time someone relies on it. A false null just sits there, quietly wrong, steering decisions for years. Nobody re-runs an experiment that already has an answer.
+
+When someone on my team brings me a null result now, I ask one question before we write it down: what would the experiment have shown if the effect were real? If the answer is "about the same," we have not measured anything yet.

@@ -1,0 +1,81 @@
+---
+publishDate: 2026-07-06
+title: 'No Model Passed the Bake-Off. I Shipped One Anyway.'
+excerpt: 'Choosing a groundedness metric when no leaderboard covers your corpus, every candidate fails your gates, and the bias you ship has to be documented instead of hidden.'
+category: 'architecture-decisions'
+tags:
+  - llm-evaluation
+  - embeddings
+  - rag
+  - python
+  - engineering-management
+author: 'Ruby Jha'
+draft: false
+metadata:
+  description: 'Choosing a groundedness metric when no leaderboard covers your corpus, every candidate fails your gates, and the bias you ship has to be documented instead of hidden.'
+---
+
+I ran a bake-off to pick the metric that gates every answer my digital clone system delivers: three candidate models, four pass/fail gates, a hand-labeled ground truth, with the gates written down before any candidate was scored so I could not bend the bar afterward. None of the three passed. The bake-off returned "none clears," and I shipped one of the failures anyway, with its defect measured and written down.
+
+That sentence would have horrified an earlier version of me. I now think it is what honest shipping looks like when the clean option does not exist. Here is the whole decision, including the part where I later retracted my own compensation plan.
+
+## The box the metric had to fit
+
+My digital clone project answers computer science questions in the voice of Linux kernel leaders, retrieving textbook passages and generating answers grounded in them. It had just lost its groundedness metric, the score that measures whether a generated answer is actually supported by the retrieved passages. The previous one, cosine similarity between response and passages, [turned out to measure vocabulary reuse rather than truth](/blog/p6-groundedness-measured-copying), and the replacement had to gate delivery live: every answer either clears the groundedness floor or the system declines in the leader's voice. This gate is also the hallucination defense for out-of-domain (OOD) questions, and I had set OOD safety as non-negotiable.
+
+Live gating in a deterministic router puts hard walls around the choice. The metric must run in-process, on every question, inside the evaluation step's latency budget. And it must be deterministic, because my router is a pure function now, and a deterministic comparison over a nondeterministic input is not deterministic. That rules out an LLM judge on the routing path outright, whatever its accuracy. Temperature 0 is not a guarantee, [a lesson this project had already paid for once](/blog/p6-llm-where-comparison-operator-belonged).
+
+The usual answer is: pick the best entailment model (one trained to judge whether a passage supports a claim) off a public leaderboard. That door was closed too. My corpus is Linux kernel mailing list prose, terse and idiomatic, out-of-domain for the general benchmarks those leaderboards measure. A ranking computed on other people's data was not evidence about mine.
+
+So the selection had to be a local experiment. And because I knew I would be tempted to rationalize whichever model looked best, the gates came first: written down, with numeric bars, before any candidate was scored.
+
+## Four gates, three candidates, zero passes
+
+The ground truth was a claim-by-claim containment oracle built during the metric investigation: every claim in every response labeled as grounded (directly supported by the retrieved passages), inferable, or free (unsupported), produced blind to any model's scores. Building it cost about a day of labeling work, and it turned out to be the highest-leverage artifact in the project, because every later judgment (the bake-off, the threshold, the bias characterization) rests on it. One honesty note lives in the record beside it: the cutoff I used to convert oracle labels into deliver-versus-fallback verdicts was an analyst choice made during the work, not pre-registered, and it is marked as such. Pre-registration only protects the decisions you actually registered, and pretending otherwise is its own form of rigging.
+
+The four gates encoded what a trustworthy groundedness metric means for this system. G1: on questions the oracle rates equally grounded across the two clones, the score gap must stay within 0.05 with no systematic lean, because a paraphrase penalty was the exact defect being replaced. G2: agreement with the oracle on which clone is more grounded, at least 12 of 14 questions. G3: correlation with response length no more than 0.20, because the old metric rewarded verbosity. G4: out-of-domain separability at AUC 0.85 or better, because the gate's real job is keeping hallucinations from shipping. AUC here reads as: how reliably the score ranks OOD content below in-domain content, where 1.0 is perfect ordering and 0.5 is a coin flip.
+
+The candidates were a DeBERTa-v3 natural-language-inference model as the control, MiniCheck flan-t5-large, and Vectara's HHEM-2.1-Open, a 110M-parameter local factual-consistency model.
+
+DeBERTa failed the length gate at r = 0.307 and managed only 8 of 14 on direction. MiniCheck was clean on length at r = 0.052 but worst on direction at 6 of 14, with a fully systematic lean toward the echoing clone, 7 of 7. HHEM posted the best oracle agreement with a sentence-level AUC of 0.858, acceptable length coupling at r = 0.174, and the best OOD separability at 0.942. It still failed G1, leaning toward Kroah-Hartman on 6 of 7 held-equal questions with a gap of 0.060, and failed G2 at 6 of 14.
+
+| Gate                      | Bar                        | DeBERTa-v3       | MiniCheck                            | HHEM-2.1-Open             |
+| ------------------------- | -------------------------- | ---------------- | ------------------------------------ | ------------------------- |
+| G1 (held-equal score gap) | ≤ 0.05, no systematic lean | 0.084 (fail)     | 0.057, systematic 7 of 7 lean (fail) | 0.060, 6 of 7 lean (fail) |
+| G2 (direction agreement)  | ≥ 12 of 14                 | 8 of 14 (fail)   | 6 of 14 (fail)                       | 6 of 14 (fail)            |
+| G3 (length correlation)   | r ≤ 0.20                   | r = 0.307 (fail) | r = 0.052 (pass)                     | r = 0.174 (pass)          |
+| G4 (OOD separability)     | AUC ≥ 0.85                 | 0.875 (pass)     | 0.940 (pass)                         | 0.942 (pass)              |
+
+None clears. The pre-registration did its job precisely at this moment: without it, I would have quietly relaxed a bar until my favorite passed. With it, I had to say out loud that the field had failed, and decide what failure meant.
+
+I also tested whether the failure was fixable by arithmetic: four different ways of combining HHEM's per-sentence scores into one number, again with the bar written down first. None cleared; the variant that improved the held-equal gap dropped direction agreement further. The paraphrase lean is intrinsic at the level of individual sentence-passage pairs, and no reshuffling of the same numbers removes it. A per-leader calibration would have closed the gap by construction, and I banned it, because scoring one clone against a friendlier curve is threshold-rigging relocated into the metric.
+
+HHEM won on every axis the other two split. Best oracle agreement, best OOD defense, tolerable length coupling. I chose it as the least-confounded instrument in an imperfect field, and said so in the decision record in those words.
+
+## A threshold is not a property of your pipeline
+
+The old cosine floor was 0.60. The naive move is to keep the threshold and swap the model. On HHEM's scale, 0.60 would have routed roughly 42% of oracle-grounded content to fallback, because entailment scores run structurally lower than echo-inflated cosine scores. A threshold belongs to a metric, not to a pipeline.
+
+The new floor was derived, not chosen: maximize the grounded deliver rate subject to catching at least 90% of content that should fall back, tuned on one split of the questions and validated on a held-out split. The rule is deliberately asymmetric because the failure costs are asymmetric: a wrongly delivered hallucination is worse than a wrongly declined answer. The optimization landed at 0.4368; I shipped 0.40 because it sits mid-band in the [0.38, 0.44] stability interval rather than balancing on a knife edge.
+
+The deployment shape matters as much as the number. HHEM's weights are pinned at build time and loaded at startup like the FAISS index, so the routing path makes no external call and the same response scores the same on every run. That is the property the whole rework had been fighting for, and it is why "just use an LLM judge, it is more accurate" was never on the table for the live gate. Accuracy that varies run to run is not accuracy a pure-function router can consume.
+
+Production had one more toll to collect. HHEM would not load under transformers 5.x, failing with an `AttributeError` on a weight-loading attribute the model's remote code never sets. Nothing in my stack actually required 5.x, but pinning the whole project to 4.x for one dependency is the tail wagging the dog, and no 5.x-compatible upstream revision existed. I costed three paths (pin the runtime, vendor the model code, isolate it in a subprocess) and vendored: HHEM's two model files copied into the repo, pinned to an exact hub commit, with a one-line class-level fix and `trust_remote_code=True` deleted, which as a bonus removed remote code execution from my routing path. Subprocess isolation lost because a process boundary breaks the in-process property the gate requires. The cost of vendoring is real and accepted: I now own two files of someone else's model code, so the provenance (source commit and the single changed line) is recorded next to them, keeping the modification auditable instead of mysterious.
+
+The vendored path also had to reproduce the exact working call sequence; fixing the load alone was not enough. The generic pipeline interface loaded HHEM without complaint and silently produced flat scores of about 0.29 for every input; only the model's own predict path with its internal prompt template returned real signal. A model that fails loudly is a dependency problem. A model that returns plausible constants is an incident.
+
+## Shipping the bias, then retracting my own fix
+
+What remained was the residual: HHEM still leans toward the clone that echoes source vocabulary on containment-equal questions. The lean reproduced across every model family tested, survived retrieval fixes and aggregation changes, and the oracle confirmed it is not a real grounding difference. On this corpus, surface-sensitive metrics penalize paraphrase. That is a property of the available instruments, and no local model on the shelf escapes it.
+
+Three doors. Reshape the metric: proven impossible by the aggregation probe, and the per-leader version is banned as rigging. Demote groundedness to an offline metric and route on something else: gives up the live hallucination defense, which is the one non-negotiable. Or ship the bias, characterized and documented, and compensate at the per-leader shipping floors. I chose door three and committed the compensation plan to the decision record.
+
+Then the follow-up analysis made me take half of it back. Measured at the shipped threshold, the bias is regime-dependent in a way a single summary number hides. On the easy held-equal questions the per-leader deliver gap is exactly zero, because those scores sit far above the floor and a 0.06 gap up there crosses nothing. On hard questions the bias is real: three Torvalds responses with oracle grounding between 54% and 73% scored 0.28 to 0.38 and fell to fallback wrongly. The raw 0.06 gap overstates the problem where it is harmless and understates it where it bites.
+
+That shape is exactly why the promised floor compensation was the wrong instrument, and the final amendment declines to apply it. A per-leader floor is an aggregate guardrail. It cannot tell a paraphrase-penalized grounded response from a legitimately weak one, so lowering the Torvalds floor would license weak deliveries without rescuing the specific misroutes, while softening the same gate that blocks OOD hallucinations. The floors stayed put and were reframed as what they are: regression guardrails. On the corrected metric, both clones cleared them with 21 and 43 points of margin, and the known misroute class ships as a documented limitation with named example questions.
+
+## What I would want to see in the review
+
+The residual defect in my gate is written down with its mechanism, its magnitude, where it bites and where it does not, and the specific questions it affects. Under deadline pressure, a measured bias becomes "acceptable noise" in the retro and vanishes from the docs, and the next engineer inherits it as a surprise instead of a fact.
+
+If someone on my team shipped a gate like this, the shipping would not concern me. Perfect instruments are not on offer. What I would review hard is the order of operations: bars written before candidates were scored, a compensation plan retracted when the analysis showed it targeted the wrong shape, and a defect that survives in the documentation instead of fading from memory. "It doesn't fully work and here is precisely how" is a deliverable. Pretending otherwise is the actual failure mode.
