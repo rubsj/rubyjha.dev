@@ -39,12 +39,12 @@ The candidates were a DeBERTa-v3 natural-language-inference model as the control
 
 DeBERTa failed the length gate at r = 0.307 and managed only 8 of 14 on direction. MiniCheck was clean on length at r = 0.052 but worst on direction at 6 of 14, with a fully systematic lean toward the echoing clone, 7 of 7. HHEM posted the best oracle agreement with a sentence-level AUC of 0.858, acceptable length coupling at r = 0.174, and the best OOD separability at 0.942. It still failed G1, leaning toward Kroah-Hartman on 6 of 7 held-equal questions with a gap of 0.060, and failed G2 at 6 of 14.
 
-| Gate | Bar | DeBERTa-v3 | MiniCheck | HHEM-2.1-Open |
-| --- | --- | --- | --- | --- |
-| G1 (held-equal score gap) | ≤ 0.05, no systematic lean | 0.084 (fail) | 0.057, systematic 7 of 7 lean (fail) | 0.060, 6 of 7 lean (fail) |
-| G2 (direction agreement) | ≥ 12 of 14 | 8 of 14 (fail) | 6 of 14 (fail) | 6 of 14 (fail) |
-| G3 (length correlation) | r ≤ 0.20 | r = 0.307 (fail) | r = 0.052 (pass) | r = 0.174 (pass) |
-| G4 (OOD separability) | AUC ≥ 0.85 | 0.875 (pass) | 0.940 (pass) | 0.942 (pass) |
+| Gate                      | Bar                        | DeBERTa-v3       | MiniCheck                            | HHEM-2.1-Open             |
+| ------------------------- | -------------------------- | ---------------- | ------------------------------------ | ------------------------- |
+| G1 (held-equal score gap) | ≤ 0.05, no systematic lean | 0.084 (fail)     | 0.057, systematic 7 of 7 lean (fail) | 0.060, 6 of 7 lean (fail) |
+| G2 (direction agreement)  | ≥ 12 of 14                 | 8 of 14 (fail)   | 6 of 14 (fail)                       | 6 of 14 (fail)            |
+| G3 (length correlation)   | r ≤ 0.20                   | r = 0.307 (fail) | r = 0.052 (pass)                     | r = 0.174 (pass)          |
+| G4 (OOD separability)     | AUC ≥ 0.85                 | 0.875 (pass)     | 0.940 (pass)                         | 0.942 (pass)              |
 
 None clears. The pre-registration did its job precisely at this moment: without it, I would have quietly relaxed a bar until my favorite passed. With it, I had to say out loud that the field had failed, and decide what failure meant.
 
