@@ -1,0 +1,120 @@
+---
+/**
+ * Torvalds Digital Clone (P6) request flow — static HTML/CSS/Tailwind.
+ * Single vertical pipeline with a deliver/fallback branch at the Gatekeeper,
+ * matching the ShopTalkPipelineDiagram visual pattern.
+ * LLM-driven Agents and deterministic Components are distinguished by a
+ * label chip and border color.
+ */
+---
+
+<div class="not-prose my-8 mx-auto max-w-xl font-sans text-sm">
+  <!-- Legend -->
+  <div class="mb-3 flex items-center justify-center gap-5 text-xs text-slate-500 dark:text-slate-400">
+    <span class="inline-flex items-center gap-1.5">
+      <span class="inline-block h-3 w-3 rounded-sm border-2 border-indigo-400"></span>
+      Agent (LLM reasoning)
+    </span>
+    <span class="inline-flex items-center gap-1.5">
+      <span class="inline-block h-3 w-3 rounded-sm border-2 border-slate-400"></span>
+      Component (deterministic)
+    </span>
+  </div>
+
+  <div class="flex flex-col items-center">
+    <div
+      class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center w-full max-w-sm"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">User query</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <div
+      class="rounded-lg border-2 border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center w-full max-w-sm"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">Retriever</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">FAISS top-20 · dedup · Cohere rerank to top-5</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <div
+      class="rounded-lg border-2 border-indigo-400 dark:border-indigo-500 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center w-full max-w-sm"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">CloneAgent</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">drafts the answer in the leader's voice</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <div
+      class="rounded-lg border-2 border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center w-full max-w-sm"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">ScoringEngine</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">style · groundedness (HHEM) · confidence</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <div
+      class="rounded-lg border-2 border-indigo-400 dark:border-indigo-500 bg-slate-50 dark:bg-slate-800 px-5 py-2.5 text-center w-full max-w-sm"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">EvaluatorAgent</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">explains the scores · flags raised in code</span>
+    </div>
+
+    <div class="py-1 text-base leading-none text-slate-400 dark:text-slate-500">↓</div>
+
+    <div
+      class="rounded-lg border-2 border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-900 px-5 py-2.5 text-center w-full max-w-sm"
+    >
+      <span class="font-semibold text-slate-800 dark:text-slate-100">Gatekeeper</span>
+      <br />
+      <span class="text-xs text-slate-500 dark:text-slate-400">pure function: groundedness ≥ 0.40?</span>
+    </div>
+
+    <!-- Branch -->
+    <div class="grid grid-cols-2 gap-4 w-full max-w-sm">
+      <div class="flex flex-col items-center">
+        <div class="py-1 text-xs leading-tight text-center text-slate-400 dark:text-slate-500">
+          yes<br />↓
+        </div>
+        <div
+          class="rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-center w-full"
+        >
+          <span class="font-semibold text-slate-800 dark:text-slate-100">Deliver</span>
+          <br />
+          <span class="text-xs text-slate-500 dark:text-slate-400">answer + citations</span>
+        </div>
+      </div>
+      <div class="flex flex-col items-center">
+        <div class="py-1 text-xs leading-tight text-center text-slate-400 dark:text-slate-500">
+          no<br />↓
+        </div>
+        <div
+          class="rounded-lg border-2 border-indigo-400 dark:border-indigo-500 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-center w-full"
+        >
+          <span class="font-semibold text-slate-800 dark:text-slate-100">FallbackAgent</span>
+          <br />
+          <span class="text-xs text-slate-500 dark:text-slate-400">declines in the leader's voice</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Offline input -->
+    <div
+      class="mt-5 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 px-4 py-2 text-center w-full max-w-sm"
+    >
+      <span class="text-xs text-slate-500 dark:text-slate-400">
+        <span class="font-semibold text-slate-700 dark:text-slate-200">StyleProfileBuilder</span>
+        (Component, offline): LKML archive → 15-feature style profile, read by both the CloneAgent and the
+        ScoringEngine
+      </span>
+    </div>
+  </div>
+</div>

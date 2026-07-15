@@ -1,0 +1,74 @@
+---
+publishDate: 2026-06-08
+title: 'I Put an LLM Where a Comparison Operator Belonged'
+excerpt: 'My ship gate came back 0 for 14, three passes, zero variance. The thresholds existed only as text inside a prompt, and the LLM reading them could not do arithmetic.'
+category: 'architecture-decisions'
+tags:
+  - multi-agent
+  - llm-evaluation
+  - crewai
+  - prompt-engineering
+  - python
+author: 'Ruby Jha'
+draft: false
+metadata:
+  description: 'My ship gate came back 0 for 14, three passes, zero variance. The thresholds existed only as text inside a prompt, and the LLM reading them could not do arithmetic.'
+---
+
+My digital clone project answers computer science questions in the voice of Linus Torvalds or Greg Kroah-Hartman, and it is built to refuse when its textbook corpus cannot support a grounded answer. The ship gate, the final evaluation run that decides whether the system is done, came back 0 for 14: of the 14 answerable questions each clone faced, neither clone answered a single one, across three full evaluation passes, with zero variance. A system that had delivered answers for weeks suddenly refused everything, identically, every time.
+
+Zero variance was the tell. A stochastic failure flickers. This was a logic defect, executing perfectly. And when I traced it, I found something worse than a bug: the routing thresholds my whole delivery decision depended on did not exist in code. Anywhere.
+
+This is the story of a routing layer that went from a weighted formula to an LLM and back to a pure function, and what each step taught me about where LLM judgment belongs.
+
+## Act one: the formula that could not discriminate
+
+Every generated answer faces one decision: deliver it to the user, or fall back, meaning decline gracefully in the leader's voice. Version one made that decision with a weighted score, `final = 0.4*style + 0.4*groundedness + 0.2*confidence`, thresholded at 0.75. The three inputs are quality scores computed for every answer: does it sound like the leader, is it supported by the retrieved passages, and how hedged is its phrasing.
+
+The formula failed in a specific way: it compressed three signals into one number and lost their interaction. A high-style, low-groundedness response is dangerous, a confident hallucination in Torvalds' voice. A mediocre-across-the-board response is merely unimpressive. The formula scored them the same. Fallback rates ran 95%, 90%, and 72.5% across three measurement runs, and one question flipped from deliver to fallback across runs with no change to anything the formula could see. The weights had come from intuition in the first place, and my [earlier attempt to validate them had already collapsed as a measurement artifact](/blog/p6-three-null-results).
+
+So I replaced the formula with judgment. A GatekeeperAgent, an LLM reading the question, the response, the retrieved passages, the three individual scores, and the evaluator's flags (labels like `low_groundedness` that mark a quality dimension as weak), reasoning its way to deliver or fallback at temperature 0 with structured output. The reasoning string became a reviewable artifact. No arbitrary threshold to tune per corpus. It felt like an upgrade, and I wrote the decision record with conviction.
+
+Two days of project time later, the ship gate proved the idea wrong.
+
+## Act two: thresholds made of prose
+
+When the 0-for-14 gate result landed, the obvious suspects were the corpus and the clone. The evidence cleared both. Retrieval was strong on half the questions. The generated answers were well grounded; one Kroah-Hartman response scored 0.706 groundedness against a stated target of 0.60 and was still refused.
+
+Reading the gate's stored outputs against the source code established the actual cause. The three quality targets (style above 0.90, groundedness above 0.60, confidence above 0.80) existed only as f-string literals inside the EvaluatorAgent's natural-language task description. There was no `if score < threshold` anywhere in the codebase. I searched.
+
+The flags that drove routing were produced by LLM judgment, twice. The first LLM wrote a prose verdict about the scores. A second LLM call then extracted flag labels from that prose, without re-reading a single number. And the evaluator's backstory instructed it to be direct and to name concrete problems rather than hedging, which biased it toward raising flags. Conservative prose in, conservative flags out, and every one of the 96 scored answers in the evaluation carried at least one flag.
+
+The measurements made it undeniable. Thirteen of the 28 answers to answerable questions scored at or above the 0.60 groundedness target and were flagged `low_groundedness` anyway. The gatekeeper then routed on flag presence. Its reasoning strings included an arithmetically false claim on one question: it stated that 0.651 is below the 0.60 threshold. The number was laundered into qualitative language at the first LLM hop and was gone by the time the routing decision was made.
+
+The fix was almost embarrassing to write down. Each flag is now raised by a deterministic comparison in code, against named constants. The LLM writes explanation prose and nothing else. The redundant second LLM call was deleted. A unit assertion now guarantees that no answer at or above a threshold ever carries the corresponding flag.
+
+Then the fix exposed a second phantom. Re-deriving flags against the stored scores left only 3 of 28 answers flag-clean, because `low_style` became the new dominant blocker. The style threshold of 0.90 turned out to have the same disease one level up: a git-history read showed 0.90 was a calibration target from synthetic data, which full-corpus validation had explicitly corrected to 0.70 much earlier. The 0.90 survived only inside a docstring and the evaluator's prompt, then got reused as a hard gate. The style scorer's actual in-domain distribution had a mean of 0.85, and only 32% of answers reached 0.90. I was holding generated responses to a bar the leaders' own emails could not clear. The threshold moved to 0.70, the value the corpus itself had validated.
+
+## Act three: temperature 0, three different answers
+
+Here is the discipline part, and I think it is the most transferable piece of the story. I deliberately did not fix the gatekeeper at the same time as the flags. The hypothesis that the gatekeeper ignored scores could not be proven while the flag bug existed, because no flag-clean answer had ever reached it. Fixing both at once would have meant a recovered deliver rate that could not be attributed to either fix. One measured variable at a time.
+
+The re-evaluation gave the gatekeeper its first flag-clean answers, and it convicted itself. Of 25 fully flag-clean answers, 22 still fell back. The LLM was overriding clean flags and performing its own unconstrained groundedness judgment. That judgment did not even follow the score's ordering: an answer at 0.675 delivered while answers at 0.727, 0.715, and 0.698 fell back. No internal threshold explains that pattern. And the same question, same leader, flipped deliver, fallback, deliver across three identical temperature-0 passes while its score barely moved.
+
+Temperature 0 does not make an LLM a function. It narrows a distribution. Put an LLM at a decision point that is fundamentally arithmetic and it fabricates nondeterminism, then writes fluent prose rationalizing whichever answer it produced. The arithmetically false reasoning strings were the tell: the model was not reading the number at all. It was generating skeptical prose about groundedness and routing on its own prose, not on the score.
+
+The same mechanism had been quietly corrupting my audit trail. Every declined answer carried the label `low_groundedness` as its trigger category, regardless of what actually triggered the decline, because the LLM's freehand judgment was always about groundedness and it back-filled the label to match. The schema offered five categories. The LLM used one, for everything.
+
+The final architecture is a pure function. Compute the flags from the scores. Branch on groundedness alone: an ungrounded answer is a hallucination, which is the one failure the gate exists to stop, while an off-voice or low-confidence answer that is grounded and true still ships, carrying its quality flags as metadata.
+
+The trigger category is now set by code, and the code only emits labels it can actually determine. Checking the code path revealed a subtlety here: a retrieval that returns zero passages flows all the way to the router with a groundedness of 0.0, so by score alone it is indistinguishable from a badly grounded answer. The only discriminant is the passage count, so the router checks that first and labels it `empty_retrieval`. Three of the original five category labels require semantic judgment code cannot make, and they became intentionally unreachable rather than approximated. The rule that came out of this: code does not invent categories to rationalize a judgment it never made. Better a small honest vocabulary than a rich fabricated one.
+
+The explanation moved to the one consumer that renders prose to a user: the fallback agent, which writes the decline in the leader's voice. Code asserts the fact in a templated string with the actual score values; the LLM dresses that fact for the human. Rewiring this surfaced a small embarrassment: the fallback agent had accepted a style profile parameter since day one and silently ignored it, which is why declines had sounded like a generic apology instead of like Torvalds. The routing rework fixed a prose-quality bug I had never even noticed.
+
+The gatekeeper stopped being an agent. It is a component now, a plain class with a `run()` method and no LLM call, renamed and relocated with the other deterministic parts. The agent count dropped from four to three, and the system's story got stronger, because every remaining LLM now sits where judgment is the work: writing voiced prose, explaining a score, declining gracefully. Everything that is a computation returns the same output for the same input, every run.
+
+For readers from the Java or TypeScript world: this is replacing a service that wrapped a hand-written judgment call with a pure function returning the same typed result, while the human-readable message moves to the view layer. You would never ask a code reviewer to eyeball whether 0.706 is less than 0.60 when `score < GROUNDEDNESS_MIN` is exact and testable. I did the LLM equivalent of exactly that, twice.
+
+## When you should choose differently
+
+The pure-function answer holds because my routing inputs are already numbers that deterministic code produced. If your gate truly needs semantic judgment, whether a response contradicts a source, whether a request is in scope for a policy, then an LLM at the gate may be the honest choice, and the formula is the fake rigor. The failure here was not "LLM in the pipeline." Three LLMs remain in mine. The failure was an LLM at a decision point whose entire job was `x < y`.
+
+The generalization I carry forward: give the LLM the work that is judgment, give code the work that is arithmetic, and be suspicious of any design where a number crosses an LLM on its way to a comparison, because the number does not reliably come out the other side.
+
+What stays with me as a manager is how the defect got in. I never wrote a buggy function. The thresholds fell through a crack between a prompt and a codebase, and every individual piece looked reasonable in review. The question I now ask about any agentic design is not "is the prompt good" but "which decisions in this system are arithmetic, and can I point to the line of code that makes each one."

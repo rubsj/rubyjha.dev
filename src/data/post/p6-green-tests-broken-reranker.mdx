@@ -1,0 +1,59 @@
+---
+publishDate: 2026-05-25
+title: 'The Test Suite Was Green. The Reranker Had Been Broken for Two Months.'
+excerpt: 'A mocked unit test passed on every commit while the live Cohere call failed on every run. What that gap cost, and the three-layer methodology that closes it.'
+category: 'architecture-decisions'
+tags:
+  - llm-evaluation
+  - rag
+  - python
+  - engineering-management
+author: 'Ruby Jha'
+draft: false
+metadata:
+  description: 'A mocked unit test passed on every commit while the live Cohere call failed on every run. What that gap cost, and the three-layer methodology that closes it.'
+---
+
+My digital clone project answers computer science questions in the voice of Linux kernel leaders: it searches a textbook corpus for relevant passages, and a language model writes a reply grounded in them. Between search and generation sits a reranker, a second-pass component that re-reads the retrieved passages against the question and promotes the best ones to the model. Two months into the project, I ran the first true end-to-end verification pass: every test question through the full pipeline, against real services, with the outputs inspected by hand.
+
+The reranker had been broken the entire time. Not degraded. Broken. Every live call to it was failing, and the pipeline was silently falling through to the raw first-pass search results, skipping the reranking step on every single run.
+
+The reranker had a unit test. The test mocked the success path, asserted on the mocked response, and passed on every commit for two months. CI was green the entire time the feature did not work.
+
+## How a mock lies to you
+
+There was nothing exotic about the failure. The unit test did exactly what unit tests do: it isolated the reranking logic from the network, substituted a canned response from Cohere (the API the reranker calls), and verified that my code handled that response correctly. My code did handle it correctly. The canned response just no longer resembled what the live API returned, and no test anywhere exercised the real call.
+
+A mock is a statement of your assumptions about a dependency. When you test against it, you are checking your code against your own beliefs, not against the dependency. If the belief drifts from reality, the test keeps passing, because both sides of the assertion come from you. The test suite was not lying, exactly. It was answering a narrower question than the one I thought I was asking. I was asking "does reranking work?" It was answering "does my code handle the response I imagined?"
+
+The degradation path made it worse. Graceful fallback is a virtue in production and a vice in testing: because the pipeline fell back to the raw first-pass search results instead of crashing, there was no stack trace, no error rate, no alert. Answers still came back. They were just retrieved by a weaker method than the one I had built, measured, and documented.
+
+The cost was not hypothetical. Groundedness, the score measuring how well each generated answer is supported by the retrieved text, averaged 0.5173 across the evaluation set during the broken period. With the reranker actually working, the same measurement came in at 0.6258. Every experiment I ran in those two months, every number I wrote into decision records, sat on top of retrieval quality that was silently worse than designed.
+
+## What only the end-to-end pass could see
+
+The verification run that caught the reranker caught two other things the same day, and that pattern is the real lesson.
+
+It measured the deliver rate on answerable questions at 39%, meaning the system was refusing more than half the questions its corpus could actually support. And it surfaced a scoring asymmetry between the two leaders the system clones, with Torvalds scoring 0.9025 on style while Kroah-Hartman scored 0.8355 on the same scorer.
+
+Neither of these is a bug in any single function. No unit test can report on them, because they are properties of the assembled system: score distributions, routing rates, cross-component interactions. Per-step tests can all pass while the system-level behavior is wrong, and I now had three simultaneous examples of exactly that.
+
+## Three layers, each with a defined guarantee
+
+The fix was not "write better mocks." The fix was to be explicit about what each kind of test is allowed to claim.
+
+Layer 1 is unit tests. They mock every LLM and network call, stay deterministic, run on every commit, and hold a coverage bar of at least 90%. Their guarantee is logic correctness: the math in the scoring engine, the branching in the router. A red Layer 1 test means a logic bug.
+
+Layer 2 is integration tests, one unit against its real dependency. An agent against a real LLM call, a retriever against a real FAISS index and a real Cohere endpoint. Live responses are recorded once and replayed in CI, so the layer stays deterministic while the assertions target contract behavior rather than exact output text. This is the layer whose absence hid the reranker failure. A recorded-replay test would have failed the day the response contract drifted, instead of two months later. A red Layer 2 test means a broken contract.
+
+Layer 3 is the system evaluation. The full set of test questions runs through the assembled pipeline, producing scores, routing decisions, and latency for every question. This layer owns the questions no smaller test can answer: deliver rates, score distributions, per-leader asymmetries. A red Layer 3 run means a system regression of the kind that verification pass exposed.
+
+The structure is Mike Cohn's test pyramid, which will be familiar to anyone from the Java or TypeScript world. The part that took me two months of being wrong to appreciate is not the shape. It is that each layer has a failure class it alone can catch, and any class without an owning layer is a class you find by accident.
+
+I considered skipping the integration layer and running just unit plus system tests. That is the configuration that had already failed me: contract drift is invisible to mocked unit tests, and by the time a system run flags it, you are debugging the whole pipeline to find one broken call. I also considered adding a fourth smoke layer between integration and system. With a 20-question-per-leader evaluation set, the full system run is cheap enough that a smoke pass in front of it would be maintenance without coverage.
+
+## The question I now ask in reviews
+
+When I review a test suite now, coverage is not my first question. My first question is: which tests would fail if a dependency changed its behavior tomorrow? If the answer is none, the suite measures the code's agreement with itself.
+
+Mocked tests passing is a claim about your logic. It is not a claim about your system. The two months my suite spent green while my retrieval quality was quietly degraded is the cleanest evidence I have ever generated for keeping those claims separate, and I generated it entirely by accident.

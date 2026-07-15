@@ -1,0 +1,73 @@
+---
+publishDate: 2026-06-22
+title: 'The Clone Was Fine. My Groundedness Metric Was Measuring Copying.'
+excerpt: 'I was two days from rewriting a working system to fix a deficit that did not exist. Cosine similarity was scoring vocabulary reuse, not truth.'
+category: 'architecture-decisions'
+tags:
+  - llm-evaluation
+  - embeddings
+  - rag
+  - python
+author: 'Ruby Jha'
+draft: false
+metadata:
+  description: 'I was two days from rewriting a working system to fix a deficit that did not exist. Cosine similarity was scoring vocabulary reuse, not truth.'
+---
+
+I was two days away from rewriting a working system to fix a deficit that did not exist.
+
+My digital clone project answers computer science questions in the voice of Linus Torvalds or Greg Kroah-Hartman: it retrieves passages from a textbook corpus and generates an answer grounded in them. A groundedness score gates every answer: if the retrieved passages do not support the response, the system declines instead of hallucinating. Across the evaluation set, the Torvalds clone scored persistently below the Kroah-Hartman clone on groundedness, and on several questions it scored below the threshold that decides whether an answer ships at all. The obvious reading was a generation deficit. The Torvalds clone was producing less grounded answers, and something in its output needed to be cut.
+
+I had two competing theories about what to excise and a plan to test them. Before running either, I made myself ask the prior question: is the deficit a property of the clone, or an artifact of how the score is computed?
+
+It was the score. All of it.
+
+## A metric with a known crack
+
+The groundedness scorer was simple and fast, and I want to be fair to it, because the original decision was defensible. Split the response into sentences. For each sentence, compute its cosine similarity (roughly, how much vocabulary and meaning two pieces of text share) against each of the five retrieved passages, and keep the best match. Average those best matches into one score. Deterministic, no LLM in the loop, under 5 milliseconds on a warm cache. An LLM judge would have added seconds of latency to every question for a number the router reads once.
+
+I even calibrated it: five sample questions scored by an LLM judge alongside the heuristic, agreeing on 4 of 5. The disagreement was a compiler question where the heuristic said 0.61 and the judge said 0.44. The response used the right technical vocabulary, so it cosine-matched the passages, while making a subtly wrong claim. I wrote that down as the known failure mode: semantic similarity cannot detect contradiction.
+
+I documented the crack and then walked past it. The known failure mode and the metric's eventual undoing were the same property, wearing different clothes.
+
+## Three probes and a blind oracle
+
+The investigation put the metric itself on trial. The design mattered here: I wanted independent lines of evidence, none of which could contaminate the others, and a ground-truth instrument that had never seen the scorer's numbers.
+
+The ground truth was a claim-by-claim markup of every response: each claim labeled grounded (directly supported by the retrieved passages), inferable (a fair inference from them), or free (unsupported), produced blind, without sight of the cosine scores. Call it the oracle. The question it answers for every claim is containment: is this claim actually contained in what the sources say.
+
+Probe A tested for a verbosity confound. Groundedness scores correlated with response length at r = +0.39, a clear positive relationship where a sound metric should show none. Longer responses echo more source text, and echoing was being rewarded regardless of whether the extra sentences were better supported.
+
+Probe B held containment equal. On the questions where the oracle rated both clones equally grounded, the scorer should have split evenly. It split 7 of 7 toward Kroah-Hartman, with a gap around 0.065. Equal truth, systematically unequal scores.
+
+Probe C exposed the mechanism at sentence level. On those same containment-equal questions, Torvalds sentences that made supported claims in his own words scored 0.17 to 0.27 cosine. Kroah-Hartman sentences that restated the source's phrasing scored 0.71 to 0.73. Same corpus, same truth status, a three-to-four-times score gap purely on wording.
+
+And the baseline disagreement: the oracle and the scorer agreed on which clone was more grounded on only 5 of 14 questions. Worse than a coin flip. The instrument gating my ship decision had no meaningful agreement with ground truth on the exact comparison I was using it for.
+
+## Echo is not support
+
+The conclusion writes itself once the probes are on the table. Cosine similarity is symmetric: it measures how much two texts share vocabulary and semantic neighborhood. Groundedness is directional: is this claim supported by that source? The two coincide only in the special case where a response restates the source in the source's own words.
+
+Kroah-Hartman's clone happens to live in that special case. His style echoes source vocabulary. Torvalds writes terse, synthesized prose that restates supported claims in his own words, and cosine punished exactly that. The metric was scoring paraphrase distance and calling it truthfulness. The clone was fine. The metric was the defect.
+
+Three decisions followed, and the discipline was in what I refused to do as much as in what I did.
+
+I did not touch the clone. There was no containment deficit to excise, so both excision theories were closed as resting on a false premise. I did not length-normalize the cosine score, which was the tempting patch: a normalized cosine still answers a similarity question, so it still rewards echo over support. It treats a symptom and leaves the disease. And I did not lower the Torvalds floor to make the rates look right, because moving a shipping floor to rescue a rate measured by an instrument you just proved broken is exactly backwards. Floor decisions wait for a corrected measurement. The metric had to be replaced outright, [which became its own decision and its own story](/blog/p6-shipping-a-metric-that-failed-its-bakeoff).
+
+One more thing did not need fixing: the router. It had floored responses against the threshold correctly the whole time. The arithmetic was honest. The number was a lie. Keeping those two judgments separate meant the deterministic routing layer, [which I had just finished hardening](/blog/p6-llm-where-comparison-operator-belonged), survived the metric's replacement untouched.
+
+## The verdict got stronger under attack
+
+I distrust convenient conclusions, and "my clone is fine, the metric is broken" is a very convenient conclusion. So the follow-up testing tried to break it.
+
+The paraphrase penalty reproduced across three additional model families: a DeBERTa NLI model, MiniCheck, and HHEM, all leaning toward the echoing clone on containment-equal questions. It survived four different ways of combining the per-sentence scores into one number. A retrieval-duplication bug found in the same period was shown not to touch any of the held-equal questions, so it was not the hidden cause. And the oracle's own labels ruled out the last innocent explanation: Torvalds' responses carried fewer claims marked as merely inferable rather than directly supported, 12.2% against Kroah-Hartman's 15.1%, so the gap was not a real grounding difference hiding in the labels. The clones are equally grounded. The bias lives in the metric family.
+
+For readers from the JVM or TypeScript world, the closest shape I know: a test that asserts on the formatted string of a value when it should assert on the parsed value. It passes and fails for the wrong reasons, and every decision it ever gated is suspect until the assertion is corrected, even though the harness around it was sound.
+
+## The question underneath
+
+The expensive mistake was nearly made before the investigation started, in the framing. "The Torvalds clone has a groundedness deficit" contains an unexamined claim: that the score measures groundedness. Every plan built on that framing inherited the assumption, and two full theories about what to cut from the clone's output got built on top of it before anyone checked the floor they stood on.
+
+The prior question costs a day. Rebuilding a healthy component to satisfy a broken metric costs weeks and leaves you worse, because the metric will still be broken when you finish, and it will find you a new deficit to chase.
+
+When a metric tells you one part of your system is underperforming, the first debugging target is the metric. Especially when the metric is convenient, fast, and something you calibrated yourself with a sample size of five.

@@ -1,17 +1,89 @@
 ---
-title: 'Digital Clone System'
-description: 'Multi-agent system that learns your writing style from samples and generates content that sounds like you. CrewAI agents handle style analysis, content planning, and draft generation.'
+title: 'Torvalds Digital Clone'
+description: 'Multi-agent system that answers CS questions in the voice of Linus Torvalds or Greg Kroah-Hartman, with a deterministic gate that declines rather than hallucinates. 78.6% and 81.0% in-domain deliver rates, 11 of 12 out-of-domain queries correctly refused, zero hallucinations.'
 projectNumber: 6
-status: 'planned'
-tags: ['multi-agent', 'prompt-engineering']
-techStack: ['Python', 'CrewAI', 'OpenAI', 'LangChain']
+status: 'completed'
+tags: ['multi-agent', 'llm-evaluation', 'rag', 'crewai', 'prompt-engineering', 'python']
+techStack:
+  [
+    'Python',
+    'CrewAI',
+    'OpenAI',
+    'Cohere',
+    'FAISS',
+    'HHEM-2.1-Open',
+    'Instructor',
+    'Click',
+    'Streamlit',
+    'pytest',
+  ]
+githubUrl: 'https://github.com/rubsj/ai-digital-clone'
 demoType: 'none'
-featured: false
-publishDate: 2026-02-22
+keyMetrics:
+  - label: 'In-domain deliver (Torvalds)'
+    value: '78.6%'
+  - label: 'In-domain deliver (Kroah-Hartman)'
+    value: '81.0%'
+  - label: 'OOD hallucinations'
+    value: '0'
+  - label: 'ADRs / tests'
+    value: '21 / 534'
+featured: true
+publishDate: 2026-05-04
 ---
 
-Everyone writes differently. Sentence length, vocabulary choices, how you structure arguments, whether you use analogies or go straight to the point. This project builds a system that captures those patterns from writing samples and generates new content in your voice.
+import TorvaldsCloneDiagram from '~/components/mdx/TorvaldsCloneDiagram.astro';
 
-The architecture uses multiple CrewAI agents: a style analyst that extracts writing patterns from samples, a content planner that outlines structure based on a topic, and a draft generator that produces content matching the analyzed style. The goal is style-matched output that a reader familiar with your writing would not question.
+I built a multi-agent system that answers computer science questions in the writing voice of Linus Torvalds or Greg Kroah-Hartman, with a deterministic gate that makes it decline rather than hallucinate when the corpus cannot support an answer. In-domain it delivers an in-voice answer 78.6% of the time as Torvalds and 81.0% as Kroah-Hartman across a three-pass run, both well above the ship bar I had locked in advance: answer at least 55% of the questions the corpus can support. On out-of-domain (OOD) questions it stays silent 11 of 12 times, with zero hallucinations, and the twelfth is a gap I can show you the exact mechanism of. 21 ADRs, 534 tests, 9 charts.
 
-This is the first multi-agent project in the portfolio. The design question is whether specialized agents with narrow prompts produce better style-matching than a single agent with a long prompt. I expect they will, but the evaluation will tell.
+## The Problem
+
+Getting the clone to sound like Torvalds turned out to be the smaller problem. A measurable style profile and a well-grounded prompt get you most of the way there. The harder question is what the system does when it should not answer, because a clone that fabricates confidently in a real person's voice is worse than no clone at all. So the product principle was set upfront: it is better to say "I don't know" in the leader's voice than to hallucinate in it.
+
+That principle turns the project into an evaluation problem more than a generation one. The system needs a measurable definition of style, a trustworthy per-answer groundedness signal, and a routing decision that cannot drift. Each of those three turned out to hide a failure worth documenting.
+
+## Architecture
+
+A CrewAI Flow orchestrates five steps: retrieve, clone, evaluate, route, then finalize or fall back. The units behind the steps split into two strictly enforced kinds. Three LLM-driven Agents sit where judgment is the work: the CloneAgent writes the answer in the leader's voice, the EvaluatorAgent explains scores and raises no numbers of its own, and the FallbackAgent writes graceful in-voice declines. Four deterministic Components own everything that is computation: the Retriever (FAISS top-20, dedup, Cohere rerank to top-5), the StyleProfileBuilder (an LKML mbox archive in, 15 interpretable style features out), the ScoringEngine (style, groundedness, confidence), and the Gatekeeper, a pure function that compares groundedness against a threshold and routes.
+
+<TorvaldsCloneDiagram />
+
+The Agent/Component line is not a naming convention. It is a binary criterion (LLM reasoning or not), enforced by a CI grep, and it exists because v1 of this project called five things "agents" when only one used the agent abstraction. The vocabulary was doing marketing, not engineering.
+
+Style runs as a closed loop: build a 15-feature profile from the leader's own emails, generate against it, verify the output against the same profile. Hand-crafted features beat embeddings here for a specific reason: embeddings cannot separate "writes like Torvalds" from "writes about kernels," and the topic overlap inflates similarity exactly where discrimination is needed.
+
+## Key Results
+
+The acceptance criteria were locked in writing before the evaluation ran, in tiers. The ship target (E2): each leader must deliver an answer on at least 55% of in-domain questions, with 100% fallback and zero hallucinations on OOD questions. The regression floor (E1): each leader must stay above the deliver rate it had already reached before the evaluation-layer rework, measured at 42.9% for Torvalds and 35.7% for Kroah-Hartman; falling below the floor means the rework made the system worse, and the project does not ship. Both leaders cleared the target and the floor. Deliver rates are reported as means over three passes with ranges, because near-threshold groundedness scores make single passes noisy, and reporting the distribution is more honest than reporting a lucky run.
+
+**The hallucination gate holds because the scores separate.** The gate is one comparison: if a response's groundedness score lands below 0.40, the system declines to answer. The 0.40 was derived, not hand-picked, by a deliberately asymmetric rule: deliver as many grounded answers as possible while still catching at least 90% of the content that should be declined, because a delivered hallucination costs more than a wrongly declined answer. The score does separate the two kinds of questions: ranking responses by groundedness puts an OOD response below an in-domain one 94% of the time (AUC 0.942), and 11 of 12 OOD questions were declined. The one OOD delivery (q20) is a characterized gap: the answer really was grounded in the retrieved chunks, but the chunks were barely relevant to the question. Groundedness asks "is the answer supported by the retrieved text," and no part of the gate asks "is the retrieved text about the question." The data makes the fix obvious: q20's best chunk scores 0.0013 on relevance to its query while every in-domain query's best chunk scores at least 0.32, a separation of three orders of magnitude. So the fix is a second check at the gate, a minimum relevance score for the top retrieved chunk alongside the existing groundedness floor. It is designed and measured, and deferred because adding a second gate signal reopens the locked routing decision.
+
+**Style was never the hard part.** The 15-feature profiles match both leaders well, and style deliberately does not veto delivery: a grounded, true answer that is slightly off-voice still ships. Groundedness alone blocks, because hallucination is the only failure the gate exists to stop.
+
+**The evaluation layer produced the project's real findings.** [The groundedness metric got replaced mid-project when three probes and a blind oracle proved cosine similarity was measuring vocabulary echo rather than support, penalizing Torvalds for paraphrasing](/blog/p6-groundedness-measured-copying). Its replacement, HHEM-2.1-Open, was [selected by a pre-registered bake-off in which no candidate passed all four gates](/blog/p6-shipping-a-metric-that-failed-its-bakeoff), and was shipped with its residual paraphrase bias measured and documented down to the query IDs it affects.
+
+## Key Decisions
+
+**Deterministic routing after an LLM router failed in production.** [The ship gate once returned 0 of 14 with zero variance](/blog/p6-llm-where-comparison-operator-belonged). The investigation found two defects stacked on top of each other. First, no code anywhere compared a score against a threshold: rules like "groundedness must be above 0.60" existed only as sentences inside the evaluator's prompt, and the LLM applying them got the arithmetic wrong, flagging a score of 0.651 as below 0.60. Second, after that was fixed, the routing LLM itself proved unreliable even at temperature 0: it delivered the same query on one pass and refused it on the next, with the scores barely moving. Routing is now a pure function; the LLM kept only the explanation prose.
+
+**HHEM-2.1-Open over an LLM judge for groundedness.** A deterministic comparison over a nondeterministic input is not deterministic, so the live gate required a local model. HHEM runs in-process, 110M parameters, vendored at a pinned commit after a transformers 5.x incompatibility, which also removed remote code execution from the routing path.
+
+**Three-layer testing after a two-month silent failure.** [A mocked unit test kept the reranker green while every live Cohere call failed](/blog/p6-green-tests-broken-reranker). Unit tests own logic, recorded-replay integration tests own contract drift, and a full-system evaluation owns what no smaller test can see. That last layer runs the whole 40-query evaluation set (14 in-domain plus 6 OOD per leader) through the assembled pipeline three times, recording scores, routing decisions, and latency for every query; the deliver rates and score distributions above come from those runs. The linked post covers the full methodology.
+
+**Acceptance criteria locked before measurement.** Targets and floors were fixed in writing before the evaluation ran, which is what kept a 0-of-14 result from being rationalized and a later recovery from being over-claimed. The floors were also mis-derived once (pooled instead of per-leader), caught, and corrected in an amendment.
+
+**Everything above is an ADR.** 21 of them, written as each decision became relevant, including three that reverse earlier ones. The reversals are documented with the evidence that forced them and what replaced them, which is exactly the record I needed when the same questions came back later in the project.
+
+## What I Would Do Differently
+
+I would put the containment oracle first. The hand-labeled per-span ground truth that eventually convicted the cosine metric took about a day to build, and I built it near the end of the project. Built at the start, it would have exposed the lexical-echo confound before the metric gated anything, and the two investigation days spent chasing a phantom "Torvalds deficit" would have been spent elsewhere.
+
+I would also budget real calibration for every threshold that gates anything. Two of my three thresholds turned out to be phantoms: numbers valid in one context, reused as hard gates in another, surviving inside prompts and docstrings. The style threshold of 0.90 was a calibration target from synthetic data, and validation on the full corpus had already corrected it to 0.70. The gate kept blocking deliveries at 0.90 anyway: the corrected value lived only in the decision record, while the stale 0.90 survived inside a docstring and the evaluator's prompt, and the prompt is what the pipeline actually read.
+
+## Known Gaps
+
+q20 delivers an OOD answer on every pass. Its answer is grounded in chunks that are barely relevant to the question, and the relevance floor described under Key Results would catch it. The change is deferred because it touches the locked routing decision.
+
+A grounded Torvalds answer can still fall back on hard paraphrased queries. HHEM inherits a measured paraphrase bias from its metric family: responses with oracle grounding of 54% to 73% can score 0.28 to 0.38 and get declined. Lowering the Torvalds threshold would weaken the same gate that blocks OOD hallucinations, so the misroutes ship as a documented limitation.
+
+The FAISS index carries 857 baked-in duplicate chunks. Retrieval-time dedup masks it for every live query; the proper fix is a deduped rebuild and re-embed.
