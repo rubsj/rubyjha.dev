@@ -26,16 +26,14 @@ const certifications = [
 // object-position: top left for cover-fit crops (src/utils/images-optimization.ts
 // getStyle()), so a square frame on a non-square source clips the shield from the
 // right/bottom. Sizing the frame to the source aspect ratio avoids cropping entirely.
-// A5 fold guard: if this row pushes the intro paragraphs below the fold at
-// 1440px, reduce badgeHeight 72 to 56 before changing anything else.
-const badgeHeight = variant === 'hero' ? 72 : 48;
-const badgeWidth = variant === 'hero' ? 137 : 92;
+const badgeHeight = variant === 'hero' ? 56 : 48;
+const badgeWidth = variant === 'hero' ? 107 : 92;
 ---
 
 {
   variant === 'hero' ? (
-    <div class="mt-6 mx-auto max-w-3xl flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-5">
-      <div class="flex shrink-0 items-center justify-center gap-4">
+    <div class="mt-5 mx-auto flex flex-col items-center gap-2">
+      <div class="flex items-center justify-center gap-4">
         {certifications.map((cert) => (
           <a
             href={cert.url}
@@ -54,7 +52,7 @@ const badgeWidth = variant === 'hero' ? 137 : 92;
           </a>
         ))}
       </div>
-      <p class="text-base sm:text-lg text-slate-700 dark:text-slate-300 sm:text-left">
+      <p class="text-sm text-slate-500 dark:text-slate-400">
         Claude Certified Architect, Professional and Foundations. Anthropic, 2026.
       </p>
     </div>
