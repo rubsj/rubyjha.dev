@@ -22,9 +22,14 @@ const certifications = [
   },
 ];
 
+// Source badge PNGs are 672x352 (not square). layout="fixed" hardcodes
+// object-position: top left for cover-fit crops (src/utils/images-optimization.ts
+// getStyle()), so a square frame on a non-square source clips the shield from the
+// right/bottom. Sizing the frame to the source aspect ratio avoids cropping entirely.
 // A5 fold guard: if this row pushes the intro paragraphs below the fold at
-// 1440px, reduce 72 to 56 before changing anything else.
-const badgeSize = variant === 'hero' ? 72 : 48;
+// 1440px, reduce badgeHeight 72 to 56 before changing anything else.
+const badgeHeight = variant === 'hero' ? 72 : 48;
+const badgeWidth = variant === 'hero' ? 137 : 92;
 ---
 
 {
@@ -41,8 +46,8 @@ const badgeSize = variant === 'hero' ? 72 : 48;
             <Image
               src={cert.image}
               alt={cert.alt}
-              width={badgeSize}
-              height={badgeSize}
+              width={badgeWidth}
+              height={badgeHeight}
               layout="fixed"
               loading="eager"
             />
@@ -57,7 +62,14 @@ const badgeSize = variant === 'hero' ? 72 : 48;
     <ul class="space-y-4">
       {certifications.map((cert) => (
         <li class="flex items-center gap-4">
-          <Image src={cert.image} alt={cert.alt} width={badgeSize} height={badgeSize} layout="fixed" class="shrink-0" />
+          <Image
+            src={cert.image}
+            alt={cert.alt}
+            width={badgeWidth}
+            height={badgeHeight}
+            layout="fixed"
+            class="shrink-0"
+          />
           <a
             href={cert.url}
             target="_blank"
