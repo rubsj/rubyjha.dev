@@ -1,0 +1,83 @@
+---
+import Image from '~/components/common/Image.astro';
+
+interface Props {
+  variant?: 'hero' | 'list';
+}
+
+const { variant = 'list' } = Astro.props;
+
+const certifications = [
+  {
+    label: 'Claude Certified Architect - Professional. Anthropic, Oct 2026.',
+    alt: 'Claude Certified Architect - Professional, issued by Anthropic',
+    url: 'https://www.credly.com/badges/767ebe0c-ad72-4c8e-b879-2a1eab599245/public_url',
+    image: '~/assets/images/badges/claude-certified-architect-professional.png',
+  },
+  {
+    label: 'Claude Certified Architect - Foundations. Anthropic, Sep 2026.',
+    alt: 'Claude Certified Architect - Foundations, issued by Anthropic',
+    url: 'https://www.credly.com/badges/5b3e44ee-e571-4068-8eed-d8e47aa1b02b/public_url',
+    image: '~/assets/images/badges/claude-certified-architect-foundations.png',
+  },
+];
+
+// Source badge PNGs are 672x352 (not square). layout="fixed" hardcodes
+// object-position: top left for cover-fit crops (src/utils/images-optimization.ts
+// getStyle()), so a square frame on a non-square source clips the shield from the
+// right/bottom. Sizing the frame to the source aspect ratio avoids cropping entirely.
+const badgeHeight = variant === 'hero' ? 56 : 48;
+const badgeWidth = variant === 'hero' ? 107 : 92;
+---
+
+{
+  variant === 'hero' ? (
+    <div class="mt-5 mx-auto flex flex-col items-center gap-2">
+      <div class="flex items-center justify-center gap-4">
+        {certifications.map((cert) => (
+          <a
+            href={cert.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="block shrink-0 rounded-md transition hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            <Image
+              src={cert.image}
+              alt={cert.alt}
+              width={badgeWidth}
+              height={badgeHeight}
+              layout="fixed"
+              loading="eager"
+            />
+          </a>
+        ))}
+      </div>
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        Claude Certified Architect, Professional and Foundations. Anthropic, 2026.
+      </p>
+    </div>
+  ) : (
+    <ul class="space-y-4">
+      {certifications.map((cert) => (
+        <li class="flex items-center gap-4">
+          <Image
+            src={cert.image}
+            alt={cert.alt}
+            width={badgeWidth}
+            height={badgeHeight}
+            layout="fixed"
+            class="shrink-0"
+          />
+          <a
+            href={cert.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-base text-primary dark:text-indigo-400 hover:underline"
+          >
+            {cert.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}

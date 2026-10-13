@@ -5,13 +5,14 @@ import WidgetWrapper from '~/components/ui/WidgetWrapper.astro';
 import Headline from '~/components/ui/Headline.astro';
 import ProjectCard from '~/components/projects/ProjectCard.astro';
 import BlogCard from '~/components/blog/BlogCard.astro';
+import CertificationBadges from '~/components/CertificationBadges.astro';
 
 import { findFeaturedProjects } from '~/utils/projects';
 import { findLatestPosts } from '~/utils/blog';
 import PersonJsonLd from '~/components/common/PersonJsonLd.astro';
 
 const metadata = {
-  title: 'Ruby Jha',
+  title: 'Ruby Jha | Engineering Manager and Principal Applied AI Engineer',
   ignoreTitleTemplate: true,
   openGraph: {
     images: [{ url: new URL('/og/home.png', Astro.site).toString(), width: 1200, height: 630 }],
@@ -40,8 +41,15 @@ const latestPosts = await findLatestPosts({ count: 3 });
     <Fragment slot="title">Ruby Jha</Fragment>
 
     <Fragment slot="subtitle">
-      <span class="block text-xl md:text-2xl font-semibold mb-2"> Engineering Manager · Applied AI · Cloud </span>
-      The next decade belongs to engineering leaders who build with AI.
+      <span class="block text-xl md:text-2xl font-semibold mb-2">
+        Engineering Manager · Principal Applied AI Engineer
+      </span>
+      I lead AI engineering in a regulated enterprise and build the systems myself.
+    </Fragment>
+
+    <!-- A5 certification row. Hero renders this slot via set:html, so a client:* island here would not hydrate. -->
+    <Fragment slot="content">
+      <CertificationBadges variant="hero" />
     </Fragment>
   </Hero>
 
@@ -56,9 +64,12 @@ const latestPosts = await findLatestPosts({ count: 3 });
         someone's claim doesn't get processed and a bad deployment means financial loss.
       </p>
       <p class="mt-5 text-base sm:text-lg text-slate-700 dark:text-slate-300">
-        Now I am applying that same engineering discipline to AI. I am building 9 AI systems covering RAG pipelines,
-        embedding fine-tuning, and multi-agent orchestration. Each one has evaluation frameworks, architecture decision
-        records, and metrics I would trust in a code review. The same standards I would hold any production system to.
+        Today I am the lead AI engineer on State Street's Enterprise Knowledge Agent, a RAG system on AWS Bedrock with
+        Claude models, orchestrated in LangGraph, over product documentation, runbooks, and release notes. It returns
+        cited answers. Releases are gated on golden-set evaluation in CI. The AI governance committee approved it and it
+        is in pilot with internal and customer users. Alongside that, I have built 9 AI systems of my own covering RAG
+        pipelines, embedding fine-tuning, and multi-agent orchestration. Each one has evaluation frameworks,
+        architecture decision records, and metrics I would trust in a code review.
       </p>
     </div>
   </section>
@@ -92,6 +103,9 @@ const latestPosts = await findLatestPosts({ count: 3 });
         <div class="flex flex-wrap gap-2">
           {
             [
+              'AWS Bedrock',
+              'Claude models',
+              'LangGraph',
               'Python',
               'Java',
               'TypeScript',

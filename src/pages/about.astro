@@ -3,11 +3,12 @@ import CallToAction from '~/components/widgets/CallToAction.astro';
 import CareerTimeline from '~/components/CareerTimeline.astro';
 import Layout from '~/layouts/PageLayout.astro';
 import PersonJsonLd from '~/components/common/PersonJsonLd.astro';
+import CertificationBadges from '~/components/CertificationBadges.astro';
 
 const metadata = {
   title: 'About',
   description:
-    'Engineering Manager with 20+ years in enterprise products. Now building 9 production AI systems covering RAG, fine-tuning, and multi-agent orchestration.',
+    'Engineering Manager and Principal Applied AI Engineer at State Street. Lead AI engineer on an enterprise RAG agent, plus a self-directed portfolio of 9 AI systems.',
   openGraph: {
     images: [{ url: new URL('/og/about.png', Astro.site).toString(), width: 1200, height: 630 }],
   },
@@ -34,8 +35,8 @@ const metadata = {
       <div class="prose prose-lg dark:prose-invert max-w-none space-y-6 text-slate-700 dark:text-slate-300">
         <p>
           I have spent 20 years building enterprise products in Financial Services, Healthcare & Insurance. Led teams,
-          shipped products, dealt with the kind of regulatory scrutiny where mistakes cost real money. Now I am building
-          AI systems myself, not just managing teams that do.
+          shipped products, dealt with the kind of regulatory scrutiny where mistakes cost real money. Now I build AI
+          systems and lead the engineers who ship them.
         </p>
         <p>
           At State Street, I own product strategy for a cloud-native Self-Service Portal used by 40+ enterprise
@@ -45,15 +46,21 @@ const metadata = {
           processes that earned EY its CMMI Level 3 certification.
         </p>
         <p>
-          In 2025, I started building AI systems alongside my day job. Not courses or tutorials. Actual systems. I am
-          working through 9 projects: synthetic data generation, RAG evaluation, LLM fine-tuning, multi-agent
-          orchestration, and production RAG pipelines. Built with Python, OpenAI, LangChain, CrewAI, ChromaDB, and
-          FastAPI. Each project has evaluation metrics, architecture decision records, and documented tradeoffs.
+          At State Street I am also the lead AI engineer on the Enterprise Knowledge Agent, a RAG system on AWS Bedrock
+          with Claude models, orchestrated in LangGraph, over product documentation, runbooks, and release notes. It
+          returns cited answers. Releases are gated on golden-set evaluation in CI. The AI governance committee approved
+          it and it is in pilot with internal and customer users.
         </p>
         <p>
-          I am looking for an Engineering Manager or AI Engineering Leader role at a company doing serious work in
-          applied AI. I have led global teams in Financial Services, Healthcare, and Insurance. Now I am adding hands-on
-          AI depth to that foundation. If that combination is what your team needs, let's talk.
+          In 2025 I started a self-directed portfolio of 9 AI systems: synthetic data generation, RAG evaluation, LLM
+          fine-tuning, multi-agent orchestration, and production RAG pipelines. Built with Python, OpenAI, LangChain,
+          CrewAI, ChromaDB, and FastAPI. Each project has evaluation metrics, architecture decision records, and
+          documented tradeoffs.
+        </p>
+        <p>
+          I am looking for an Applied AI Engineering Manager role. I have led global teams in Financial Services,
+          Healthcare, and Insurance, and I now lead AI engineering in production at one of them. If that combination is
+          what your team needs, let's talk.
         </p>
       </div>
     </div>
@@ -64,6 +71,14 @@ const metadata = {
     <div class="max-w-3xl mx-auto">
       <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-8">Career Timeline</h2>
       <CareerTimeline />
+    </div>
+  </section>
+
+  <!-- Certifications -->
+  <section class="py-10 px-4 sm:px-6">
+    <div class="max-w-3xl mx-auto">
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-8">Certifications</h2>
+      <CertificationBadges variant="list" />
     </div>
   </section>
 

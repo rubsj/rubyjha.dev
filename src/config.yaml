@@ -11,7 +11,7 @@ metadata:
   title:
     default: Ruby Jha
     template: '%s — Ruby Jha'
-  description: 'Engineering Manager and AI Systems Builder. 20+ years of enterprise experience in Financial Services and Healthcare. Building production-grade AI systems spanning RAG, fine-tuning, and multi-agent orchestration.'
+  description: 'Engineering Manager and Principal Applied AI Engineer. Lead AI engineer on an enterprise RAG agent built on AWS Bedrock, Claude models, and LangGraph. 20+ years in regulated enterprise software.'
   robots:
     index: true
     follow: true
