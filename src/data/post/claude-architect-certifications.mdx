@@ -1,0 +1,152 @@
+---
+publishDate: 2026-10-22
+title: 'Two Claude Architect Certifications in Seven Weeks'
+excerpt: 'I passed CCAR-F (871) and CCAR-P (876) back to back while working full time. What each exam tests, who should bother, and the prep system I used.'
+category: 'industry-insights'
+tags:
+  - career
+  - llm-evaluation
+  - architecture
+  - technical-strategy
+  - engineering-management
+author: 'Ruby Jha'
+draft: false
+metadata:
+  description: 'I passed CCAR-F (871) and CCAR-P (876) back to back while working full time. What each exam tests, who should bother, and the prep system I used.'
+---
+
+import { Image } from 'astro:assets';
+import foundationsBadge from '~/assets/images/badges/claude-certified-architect-foundations.png';
+import professionalBadge from '~/assets/images/badges/claude-certified-architect-professional.png';
+
+Between August 20 and October 9 I sat and passed both Anthropic certifications for Claude architects: Claude Certified Architect: Foundations (CCAR-F, scored 871) and Claude Certified Architect: Professional (CCAR-P, scored 876), each on a 1,000-point scale with a 720 cut. I did them back to back, with roughly three to four hours of study a day, three to four days a week, while working full time.
+
+<div class="flex flex-wrap justify-center gap-6 my-8">
+  <Image src={foundationsBadge} alt="Claude Certified Architect: Foundations badge" width={160} />
+  <Image src={professionalBadge} alt="Claude Certified Architect: Professional badge" width={160} />
+</div>
+
+This is the write-up I wished existed when I started. It covers why I did both, what each exam actually measures, how I prepared, where it has shown up in my work so far, and who I think should and should not take them. I have kept to what I can say without breaching the candidate agreement, so you will not find exam items here. You will find the method.
+
+## Why I did them
+
+I had been building applied AI systems for over a year before I registered: a RAG evaluation framework comparing sixteen retrieval configurations, a knowledge agent for a retail domain, a persona agent. The learning had been real but it had accumulated the way production learning does, as a pile of hard-won specifics with no index.
+
+When I read the Foundations exam guide, two things stood out.
+
+First, the judgment it tests is portable; the API surface is not. Agentic loop control flow, tool interface design, context management, evaluation methodology, structured output, human-review workflows, provenance: the decisions in these areas are the decisions any team shipping LLM systems has to make, on any model. The Claude-specific parts are the parameter names and platform mechanics, and those are the smaller and more perishable half of what you learn.
+
+Second, the exam is written to discriminate between people who have read the documentation and people who have shipped. The published samples are short. The real items are long scenario descriptions with four plausible options, and the plausible-but-wrong options are the ones a documentation reader would pick. That told me the exam would consolidate what I had learned by building rather than test recall, which is the only kind of certification worth a working engineer's time.
+
+So the honest reason is this: I wanted an external forcing function to turn a pile of specifics into a structure, and I wanted a credential that would mean something to the people reading my profile. Foundations did the first. Professional did both, because it adds the half of the job that is not engineering.
+
+Why not stop after Foundations? Because Foundations certifies that you can build the system. Professional certifies that you can own it: requirements, architecture trade-offs, evaluation strategy, governance, stakeholder communication, lifecycle. For someone whose role is technical leadership, the second exam is the one that describes the job.
+
+One practical note. These exams are currently available only through Anthropic's partner network, which means most engineers cannot simply register. I sat mine through the partner network. If you are at a partner organization, your training or alliances lead will know the path. If you are not, the material is still worth studying for the reasons above, and I expect access to widen.
+
+## What each exam measures
+
+**CCAR-F.** Sixty items, 120 minutes. Five domains. The heaviest, at roughly a quarter of the exam, is agentic architecture and orchestration: the agentic loop, coordinator and subagent patterns, context passing, handoff enforcement, hooks, task decomposition, session state. The others cover prompting and context engineering, tool and MCP design, error handling and escalation, and the Claude Code configuration surface (CLAUDE.md, custom commands, skills, plan mode). It is an engineer's exam. It asks whether you can make the right call inside a running system.
+
+**CCAR-P.** Sixty-three items, 120 minutes, seven domains, scaled score of 100 to 1,000 with a 720 cut. Integration is the heaviest domain at 19 percent, followed by solution design at 17, evaluation and optimization at 16, governance and risk at 14, stakeholder communication and lifecycle at 14, models and context engineering at 13, and developer enablement at 7.
+
+The thing to understand about Professional is that roughly half of it is not about Claude at all. Solution design, evaluation methodology, governance and compliance, stakeholder communication: these domains have no authoritative Anthropic source. They are general AI architecture practice, and the exam keys them to what an experienced architect would do. If your preparation consists of reading docs.claude.com, you will be well prepared for half the exam.
+
+## What I learned
+
+I will separate this into things that changed how I think and things I merely had to learn. The first list is shorter and matters more.
+
+### Things that changed how I think
+
+**Decisions are not the same as desires.** The requirements elicitation objectives in Professional drew a distinction I had been collapsing for years. Stakeholders present desires as decisions: "we need the agent to answer in under two seconds," "it must never escalate to a human." An architect's job is to recover the decision that was actually made (what trade-off the stakeholder is willing to accept, and against what) from the desire it was dressed up as. Most of the time the stated requirement is a proxy for a fear, and the fear is the real constraint. I knew this intuitively from two decades of enterprise work. The exam gave me the vocabulary and made me realize how often I skip the step.
+
+**Technical numbers do not travel.** Latency, token cost, retrieval precision, judge agreement: these mean something to me and nothing to the people who fund the work. The stakeholder communication domain is explicit that performance data has to be translated into the terms the audience makes decisions in: productivity, efficiency, cycle time, risk reduced, revenue protected. As an engineering leader I already did this in budget conversations. I had not been doing it in architecture reviews, where I assumed a technical audience and lost the business stakeholders in the room.
+
+**Evaluating a non-deterministic system is an engineering problem, not a QA problem.** This was the domain that surprised me by its difficulty, and I came in with a project specifically about RAG evaluation. The gap was not metrics. It was eval dataset design: how you build a test set that covers the failure modes you care about, how big it has to be before a result means anything, how you detect a judge that agrees with itself and not with humans, how you keep a golden set from going stale when the underlying documents change. Testing a deterministic service is a solved discipline. Testing an LLM system needs a test harness that is itself a non-trivial piece of software, and the exam expects you to know how to design one.
+
+### Things I had to learn
+
+Most of Foundations was consolidation for me, so the learning was terminology: what the exam calls the things I had been doing, and the handful of places where my production instinct would have been keyed wrong. Three examples from my own gap list: handling `stop_reason` correctly in the agentic loop rather than inspecting text content, constructing tool error results so the model can act on them, and the decision rule for when to split one tool into several versus consolidate with parameters (different parameter sets, different output shapes, or logically distinct operations: if any diverge, split).
+
+For Professional the hard facts clustered in governance (the compliance regimes and what each actually constrains in an AI deployment), authentication and authorization gap analysis for agents that call enterprise systems, and observability at scale. None of these had come up in my portfolio projects, which is exactly why they needed study.
+
+The domain I expected to struggle with and did not was AI strategy and solution design. If you have scoped and shipped a few real AI projects, choosing between architectures, sequencing a rollout, and deciding what to prototype first is the part of the exam you already know.
+
+## How I prepared
+
+Nineteen days for Foundations, thirty for Professional. Three to four hours a day, three to four days a week, in two two-hour blocks. Here is the system, in the order I would recommend it.
+
+### 1. Treat the exam guide as a table of contents, not a syllabus
+
+Both guides list objectives as one-line statements. "Design evaluation strategies for AI solutions" is an objective. It is not something you can study. Before I taught myself anything I expanded every objective into a checklist of the knowledge and skills it implied, and I tagged each line as Claude-specific (verify against official docs), general practice (cite a primary source), or hybrid. Coverage was then audited against the checklists, not the guide. This is the step most people skip, and it is where most of the value was.
+
+### 2. Grade your own depth before planning
+
+For every domain I asked myself production questions, not definitions. "How did you handle context overflow in the ShopTalk agent?" rather than "what is context management." Each objective went into one of three buckets: done it in production, know the concept but have not built it, or genuine gap. The buckets dictated the activity. Production experience got terminology mapping only. Known concepts got the trade-off axis and the failure signatures. Gaps got taught from first principles.
+
+Study time then went to domain weight multiplied by gap. I never split time evenly across domains. Governance got far more hours per percentage point than solution design.
+
+### 3. Take notes as decision cards
+
+Every note followed the same shape: the choice, the axis it turns on, when each option wins, and the failure signature that tells you the wrong one was picked. The exam asks you to choose between four plausible interventions. Notes that describe concepts do not help with that. Notes that encode the decision do.
+
+### 4. Build a flashcard deck weighted toward discrimination
+
+By the end of Professional I had 208 cards, about seventy percent of them discrimination cards (X versus Y, or scenario to intervention) that name the tempting wrong answer explicitly, and about thirty percent hard facts. A smaller quick deck of 47 cards covered only the load-bearing frameworks. I use a spaced-repetition app I built for interview prep and loaded the decks into it.
+
+### 5. Name your error modes and flag cards against them
+
+After the first mocks I could see three recurring ways I lost points, and I wrote them down by number so I could catch them firing during the exam:
+
+1. **Safeguard instead of root fix.** Picking the option that adds a check, a log, or a confirmation prompt instead of the one that fixes the underlying design. Governance items are built to trigger this. The published sample about least privilege is exactly this trap: the answer is to remove the tool the role does not need, not to monitor its use.
+2. **Missing qualifiers.** "Most," "first," "primary," "best reduces." On multiple-response items, missing one qualifier costs the whole question.
+3. **Directive without information.** Choosing an answer that tells the model to do something when the model does not have the data to do it.
+
+Forty-six of my cards are flagged against these three. In the exam, when I felt the pull toward a safeguard answer, the number came to mind before the click.
+
+### 6. Generate mocks in a clean context
+
+I did not write my own practice questions, and I did not let the same session that taught me the material write them either. Shared reasoning context inflates scores. Mocks and drills were generated in a fresh session from the blueprint and official documentation, with my notes used only as a coverage map, and deliberately weighted toward the angles my notes did not cover. I ended up with four full-length blueprint-weighted mocks and seven domain drills, 466 items, plus a community practice set. Two free resources deserve credit here: the question bank at [certsafari.com](https://certsafari.com/) and the blueprint-written timed mocks at [credfarmer.com](https://credfarmer.com/certifications). Neither is affiliated with Anthropic, both give a rationale for every option, and both were worth the time.
+
+On the mocks I was scoring between 850 and 900 in the final week. The real exams came in at 871 and 876, so the mocks were calibrated well.
+
+### 7. Practice under time
+
+This is the piece I would push hardest. Sixty or sixty-three items in 120 minutes sounds generous until you see the items. Most are long enough to take more than a minute to read. The practice that mattered was sitting full mocks cold, timed, with no notes, scoring by domain, and sending any domain under 75 percent to its drill. By exam day the pacing was automatic.
+
+One tactical point about the exam itself: the delivery interface lets you strike out options. Use it. Visibly eliminating two options narrows the decision to the discrimination the item is actually testing, and it stops you re-reading options you have already rejected.
+
+## Where it is showing up in my role
+
+I want to be careful here because it has been two weeks. I do not yet have a decision I can point to and say the certification changed it. What I can say is that two things have changed in how I frame conversations.
+
+The first is requirements. I now ask, explicitly, what decision sits behind a stated requirement before I design to it. The second is translation. When I present a technical result to a mixed audience, I lead with the business quantity it moves and keep the technical number as support. Both were things I knew. Both are now things I do on purpose.
+
+I will report back when there is a harder result.
+
+## Who should take these, and who should not
+
+**Take Foundations** if you are an engineer shipping or about to ship LLM-based systems, on Claude or otherwise, and you want a structured consolidation of what good practice looks like. It is a good exam for a strong engineer with six to twelve months of hands-on work. It is a bad exam for someone who has only read about agents.
+
+**Take Professional** if you own or will own the full lifecycle: a tech lead, an architect, an engineering manager who still designs, a senior engineer moving toward those roles. Half the exam is about the parts of the job that are not code, and it rewards judgment that only comes from having been in the room when requirements were negotiated and budgets were defended. With real experience, three to four weeks of focused preparation is enough. Without it, I do not think preparation time substitutes.
+
+**Do not take either** if you are not going to build applied AI systems or make decisions about them. This is dense material. Without real projects or at least serious personal projects to anchor it, most of it will be gone in three months, and the credential will be describing knowledge you no longer have.
+
+## Recommendations, condensed
+
+1. Expand every objective into a checklist before you study anything. Audit coverage against the checklist, not the guide.
+2. Grade your own depth per objective first. Spend time where weight times gap is largest. Never split evenly.
+3. Write notes as decisions, not descriptions.
+4. Weight your flashcards toward discrimination. The points are in rejecting the plausible distractor.
+5. Find your personal error modes after the first mock and flag them. Say the number to yourself in the exam.
+6. Generate practice questions in a clean context, from the blueprint and official docs, not from your notes.
+7. Sit full mocks cold and timed. Score by domain. Drill anything under 75 percent.
+8. Verify every Claude-specific fact against current official documentation. The guide is dated and the platform moves. Where the two diverge, know which one the exam is likely to key.
+9. For the general-practice half, learn what an exam writer keys as correct and separately what you would do in production. They are not always the same, and confusing them costs points.
+10. Use the strike-out feature.
+
+If you are considering either exam and want to compare notes on preparation, my inbox is open.
+
+---
+
+*Portfolio: [github.com/rubsj](https://github.com/rubsj). The RAG evaluation framework referenced above is at [github.com/rubsj/ai-rag-evaluation-framework](https://github.com/rubsj/ai-rag-evaluation-framework).*
